@@ -1,4 +1,4 @@
-import { Box, Flex, Icon, Text } from "@chakra-ui/react"
+import { Box, Flex, Icon, Text, useColorModeValue } from "@chakra-ui/react"
 import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import {
@@ -79,6 +79,17 @@ const SidebarItems = ({ onClose }: SidebarItemsProps) => {
   const canSeeProjects =
     isLeadership || Number(accessibleProjectsMeta?.count || 0) > 0
 
+  const activeBackground = useColorModeValue(
+    "#E7ECF3",
+    "rgba(15, 23, 42, 0.9)",
+  )
+  const activeBorderLeft = useColorModeValue(
+    "3px solid #1E3A5F",
+    "3px solid #38BDF8",
+  )
+  const hoverBackground = useColorModeValue("ui.secondary", "rgba(30, 64, 175, 0.65)")
+  const itemTextColor = useColorModeValue("ui.darkSlate", "#E5E7EB")
+
   const finalItems = isLeadership
     ? [
         ...baseItems,
@@ -100,15 +111,15 @@ const SidebarItems = ({ onClose }: SidebarItemsProps) => {
       key={title}
       activeProps={{
         style: {
-          background: "#E7ECF3",
+          background: activeBackground,
           borderRadius: "6px",
-          borderLeft: "3px solid #1E3A5F",
+          borderLeft: activeBorderLeft,
         },
       }}
-      color="ui.darkSlate"
+      color={itemTextColor}
       onClick={onClose}
       borderRadius="6px"
-      _hover={{ bg: "ui.secondary" }}
+      _hover={{ bg: hoverBackground }}
     >
       <Icon as={icon} alignSelf="center" boxSize={4} />
       <Text ml={2} fontSize="sm" fontWeight="500">

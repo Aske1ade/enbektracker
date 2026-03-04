@@ -17,6 +17,7 @@ import {
   PopoverTrigger,
   Text,
   VStack,
+  useColorModeValue,
 } from "@chakra-ui/react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
@@ -76,13 +77,23 @@ const AppHeader = () => {
       .slice(0, 8)
   }, [currentUser?.id, desktopEvents?.data])
 
+  const headerBg = useColorModeValue(
+    "linear-gradient(180deg, #FFFFFF 0%, #F7FAFF 100%)",
+    "linear-gradient(180deg, #020617 0%, #020617 100%)",
+  )
+  const headerBorderColor = useColorModeValue(
+    "ui.border",
+    "rgba(148, 163, 184, 0.35)",
+  )
+  const titleColor = useColorModeValue("ui.darkSlate", "#E5E7EB")
+
   return (
     <Flex
       as="header"
       h="68px"
       borderBottomWidth="1px"
-      borderColor="ui.border"
-      bg="linear-gradient(180deg, #FFFFFF 0%, #F7FAFF 100%)"
+      borderColor={headerBorderColor}
+      bg={headerBg}
       px={{ base: 3, md: 5 }}
       align="center"
       justify="space-between"
@@ -110,7 +121,7 @@ const AppHeader = () => {
         <Text
           fontSize={{ base: "14px", md: "15px" }}
           fontWeight="700"
-          color="ui.darkSlate"
+          color={titleColor}
           noOfLines={1}
         >
           Министерство труда и социальной защиты населения Республики Казахстан

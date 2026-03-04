@@ -904,6 +904,14 @@ def require_project_task_create(
     project_id: int,
     user: User,
 ) -> None:
+    # Product rule: a regular user may create a task in any project
+    # where they already have read access; backend normalizes assignee/controller.
+    if is_regular_user(user) and can_view_project(
+        session,
+        project_id=project_id,
+        user=user,
+    ):
+        return
     if has_permission(
         session,
         user=user,

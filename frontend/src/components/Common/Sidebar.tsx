@@ -10,6 +10,7 @@ import {
   IconButton,
   Text,
   useDisclosure,
+  useColorModeValue,
 } from "@chakra-ui/react"
 import { useQueryClient } from "@tanstack/react-query"
 import { FiLogOut, FiMenu } from "react-icons/fi"
@@ -23,6 +24,10 @@ const Sidebar = () => {
   const currentUser = queryClient.getQueryData<UserPublic>(["currentUser"])
   const { isOpen, onOpen, onClose } = useDisclosure()
   const { logout } = useAuth()
+
+  const userCardBg = useColorModeValue("white", "rgba(15, 23, 42, 0.95)")
+  const logoutHoverBg = useColorModeValue("#FDECEC", "rgba(185, 28, 28, 0.16)")
+  const sidebarBg = useColorModeValue("ui.panel", "#020617")
 
   const content = (
     <Flex direction="column" justify="space-between" h="full">
@@ -56,7 +61,7 @@ const Sidebar = () => {
           borderWidth="1px"
           borderColor="ui.border"
           borderRadius="10px"
-          bg="white"
+          bg={userCardBg}
           mb={2}
         >
           <Flex align="center" gap={2}>
@@ -81,7 +86,7 @@ const Sidebar = () => {
           color="ui.danger"
           fontSize="sm"
           borderRadius="6px"
-          _hover={{ bg: "#FDECEC" }}
+          _hover={{ bg: logoutHoverBg }}
         >
           <FiLogOut />
           Выйти
@@ -121,7 +126,7 @@ const Sidebar = () => {
         w="280px"
         borderRightWidth="1px"
         borderColor="ui.border"
-        bg="ui.panel"
+        bg={sidebarBg}
         display={{ base: "none", lg: "block" }}
         position="sticky"
         top={0}
