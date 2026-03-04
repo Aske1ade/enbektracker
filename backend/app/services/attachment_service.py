@@ -1,4 +1,5 @@
 import io
+import mimetypes
 import re
 from uuid import uuid4
 
@@ -13,6 +14,29 @@ from app.repositories import task_attachments as attachment_repo
 
 FILENAME_MAX_LEN = 120
 FILENAME_SANITIZE_PATTERN = re.compile(r"[^A-Za-z0-9._-]+")
+FALLBACK_ALLOWED_CONTENT_TYPES = {
+    "text/plain",
+    "text/csv",
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.ms-powerpoint",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "application/zip",
+    "application/x-zip-compressed",
+    "application/x-rar-compressed",
+    "application/x-7z-compressed",
+    "image/png",
+    "image/jpeg",
+    "image/gif",
+    "image/webp",
+    "image/bmp",
+    "image/svg+xml",
+    # Browser/OS fallback for unknown binaries.
+    "application/octet-stream",
+}
 
 
 def _build_object_key(task_id: int, filename: str) -> str:
@@ -66,10 +90,25 @@ def _validate_attachment(*, content: bytes, file_name: str, content_type: str | 
             detail=f"Attachment is too large. Max size is {settings.ATTACHMENTS_MAX_SIZE_MB} MB",
         )
 
-    allowed_types = {item.lower() for item in settings.ATTACHMENTS_ALLOWED_CONTENT_TYPES}
+    allowed_types = {
+        item.lower().strip()
+        for item in settings.ATTACHMENTS_ALLOWED_CONTENT_TYPES
+        if item and item.strip()
+    }
+    if "*" in allowed_types or "*/*" in allowed_types:
+        return
+    allowed_types |= FALLBACK_ALLOWED_CONTENT_TYPES
     if allowed_types:
         normalized_type = _normalize_content_type(content_type)
         if normalized_type not in allowed_types:
+            guessed_type, _ = mimetypes.guess_type(file_name, strict=False)
+            guessed_normalized = _normalize_content_type(guessed_type)
+            if guessed_normalized in allowed_types:
+                return
+            if normalized_type.startswith(
+                ("application/", "image/", "text/", "audio/", "video/")
+            ):
+                return
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail="Attachment content type is not allowed",
