@@ -1,0 +1,45 @@
+services:
+  backend:
+    command: /start-reload.sh
+    develop:
+      watch:
+        - action: sync
+          path: ./backend
+          target: /app
+          ignore:
+            - ./backend/.venv/
+            - ./backend/__pycache__/
+            - ./backend/app/__pycache__/
+            - ./backend/app/alembic/versions/__pycache__/
+        - action: rebuild
+          path: ./backend/pyproject.toml
+
+  frontend-dev:
+    image: node:20
+    working_dir: /app
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 5173"
+    environment:
+      - VITE_API_URL=http://${DOMAIN?Variable not set}:8888
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - frontend-dev-node-modules:/app/node_modules
+    develop:
+      watch:
+        - action: sync
+          path: ./frontend/src
+          target: /app/src
+        - action: sync
+          path: ./frontend/public
+          target: /app/public
+        - action: sync
+          path: ./frontend/index.html
+          target: /app/index.html
+        - action: rebuild
+          path: ./frontend/package.json
+        - action: rebuild
+          path: ./frontend/package-lock.json
+
+volumes:
+  frontend-dev-node-modules:

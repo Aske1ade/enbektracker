@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="/src/styles.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EnbekTracker</title>
+    <script type="module" src="/src/main.ts" defer></script>
+  </head>
+
+  <body>
+    <main class="layout">
+      <header class="hero">
+        <div class="hero-title">EnbekTracker</div>
+        <p>Уведомления и управление desktop-агентом</p>
+      </header>
+
+      <section class="panel panel-auth">
+        <h2>Аккаунт</h2>
+        <p class="hint">
+          Привяжите рабочий аккаунт один раз. После входа в браузере агент
+          начнет получать новые уведомления.
+        </p>
+        <div class="row">
+          <button type="button" id="bind-account" class="btn-primary">
+            Привязать аккаунт
+          </button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Управление уведомлениями</h2>
+        <div class="button-grid">
+          <button type="button" id="snooze-15">Пауза 15 мин</button>
+          <button type="button" id="snooze-60">Пауза 60 мин</button>
+          <button type="button" id="resume">Возобновить</button>
+          <button type="button" id="open-tracker">Открыть EnbekTracker</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <details id="status-details">
+          <summary>Диагностика</summary>
+          <dl id="status-grid"></dl>
+        </details>
+      </section>
+
+      <section class="panel">
+        <details id="log-details" open>
+          <summary>Журнал уведомлений и событий</summary>
+          <div class="row row-space-between details-actions">
+            <span class="hint">Показываются последние события агента</span>
+            <button type="button" id="clear-log">Очистить журнал</button>
+          </div>
+          <ul id="activity-log" class="activity-log"></ul>
+        </details>
+      </section>
+
+      <section class="panel">
+        <details id="advanced-details">
+          <summary>Расширенные настройки</summary>
+          <div class="button-grid">
+            <button type="button" id="clear-token">Очистить токен</button>
+            <button type="button" id="test-toast">Тест Windows уведомления</button>
+          </div>
+        </details>
+      </section>
+
+      <p id="message" aria-live="polite"></p>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,12 @@
+.vscode
+.env
+.env.production
+.env.local
+logs/
+**/.pytest_cache/
+**/.ruff_cache/
+**/.mypy_cache/
+**/node_modules/
+frontend/dist/
+desktop-agent/src-tauri/target/
+desktop-agent/src-tauri/target/**/*
