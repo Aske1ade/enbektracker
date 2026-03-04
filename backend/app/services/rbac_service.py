@@ -491,11 +491,34 @@ def can_use_extended_dashboard_scope(
 ) -> bool:
     if is_system_admin(user):
         return True
+    if _is_lowest_hierarchy_user(
+        session,
+        user=user,
+        project_ids=project_ids,
+    ):
+        return False
+    if _get_managed_organization_ids(session, user=user):
+        return True
     if _get_direct_managed_group_ids(session, user=user):
         return True
-    if project_ids:
-        return True
     return has_project_admin_scope(session, user=user, project_ids=project_ids)
+
+
+def _is_lowest_hierarchy_user(
+    session: Session,
+    *,
+    user: User,
+    project_ids: set[int] | None = None,
+) -> bool:
+    if not is_regular_user(user):
+        return False
+    if has_project_admin_scope(session, user=user, project_ids=project_ids):
+        return False
+    if _get_managed_organization_ids(session, user=user):
+        return False
+    if _get_direct_managed_group_ids(session, user=user):
+        return False
+    return True
 
 
 def get_dashboard_viewer_user_ids(
@@ -507,6 +530,12 @@ def get_dashboard_viewer_user_ids(
 ) -> set[int] | None:
     if is_system_admin(user):
         return None
+    if _is_lowest_hierarchy_user(
+        session,
+        user=user,
+        project_ids=project_ids,
+    ):
+        return {int(user.id)}
 
     if scope_mode == "managed":
         if has_project_admin_scope(session, user=user, project_ids=project_ids):
@@ -536,6 +565,12 @@ def get_task_viewer_user_ids(
 ) -> set[int] | None:
     if is_system_admin(user):
         return None
+    if _is_lowest_hierarchy_user(
+        session,
+        user=user,
+        project_ids=project_ids,
+    ):
+        return {int(user.id)}
 
     if has_project_admin_scope(session, user=user, project_ids=project_ids):
         return None
@@ -575,6 +610,13 @@ def can_view_task(session: Session, *, task: Task, user: User) -> bool:
         return True
     if not can_view_project(session, project_id=task.project_id, user=user):
         return False
+    if _is_lowest_hierarchy_user(
+        session,
+        user=user,
+        project_ids={int(task.project_id)},
+    ):
+        participant_ids = get_task_participant_user_ids(session, task=task)
+        return user.id in participant_ids
     if has_permission(
         session,
         user=user,
@@ -904,9 +946,9 @@ def require_project_task_create(
     project_id: int,
     user: User,
 ) -> None:
-    # Product rule: a regular user may create a task in any project
-    # where they already have read access; backend normalizes assignee/controller.
-    if is_regular_user(user) and can_view_project(
+    # Product rule: task creation is allowed for any user who can access
+    # the project; assignment/controller constraints are enforced separately.
+    if can_view_project(
         session,
         project_id=project_id,
         user=user,
