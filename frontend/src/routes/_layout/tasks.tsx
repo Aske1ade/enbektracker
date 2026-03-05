@@ -121,7 +121,7 @@ type AssigneeOption = {
   label: string
 }
 
-const TASK_TABLE_SETTINGS_KEY = "tracker.tasks.table.v4"
+const TASK_TABLE_SETTINGS_KEY = "tracker.tasks.table.v5"
 const TASK_FILTER_STATE_KEY = "tracker.tasks.filters.v3"
 
 const DEFAULT_FILTERS: TaskFilters = {

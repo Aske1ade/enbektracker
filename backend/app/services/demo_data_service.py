@@ -260,7 +260,7 @@ DEMO_SPECIAL_TASKS = [
         ),
         "creator_key": "gulmira_alieva",
         "controller_key": "gulmira_alieva",
-        "assignee_key": "amirzhan_tazhibekov",
+        "assignee_key": "perizat_moldakhmetova",
         "due_date": datetime(2026, 3, 4, 9, 0, tzinfo=timezone.utc),
         "created_at": None,  # set dynamically to "about 20 days ago"
         "closed_at": None,
@@ -1346,6 +1346,9 @@ def populate_demo_data(session: Session, actor: User) -> DemoDataSummary:
             )
 
             project_member_keys = set(users_by_department.get(dep_key, []))
+            if organization_key == "ORG_MTSZN":
+                project_member_keys |= set(users_by_department.get("DEP_LEGAL", []))
+                project_member_keys |= set(users_by_department.get("DEP_MIGRATION", []))
             director_key = director_by_org.get(organization_key)
             if director_key:
                 project_member_keys.add(director_key)

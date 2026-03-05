@@ -70,7 +70,7 @@ const useAuth = () => {
         window.location.assign(redirectTarget)
         return
       }
-      navigate({ to: "/" })
+      navigate({ to: "/tasks" })
     },
     onError: (err: unknown) => {
       let errDetail: string | undefined

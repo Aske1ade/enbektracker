@@ -66,22 +66,11 @@ const SidebarItems = ({ onClose }: SidebarItemsProps) => {
     queryFn: () => trackerApi.getCurrentUser(),
     retry: false,
   })
-  const { data: accessibleProjectsMeta } = useQuery({
-    queryKey: ["sidebar-project-access"],
-    queryFn: () =>
-      trackerApi.listProjects({
-        page: 1,
-        page_size: 1,
-      }),
-    retry: false,
-  })
 
   const systemRole = normalizeSystemRole(currentUser)
   const isLeadership =
     currentUser?.is_superuser || systemRole === "system_admin"
   const isAdmin = currentUser?.is_superuser || systemRole === "system_admin"
-  const canSeeProjects =
-    isLeadership || Number(accessibleProjectsMeta?.count || 0) > 0
 
   const activeBackground = useColorModeValue(
     "#E7ECF3",
@@ -97,7 +86,7 @@ const SidebarItems = ({ onClose }: SidebarItemsProps) => {
   const finalItems = isLeadership
     ? [
         ...baseItems,
-        ...(canSeeProjects ? [projectsItem] : []),
+        projectsItem,
         dashboardsItem,
         reportsItem,
         ...leadershipItems,
@@ -106,7 +95,7 @@ const SidebarItems = ({ onClose }: SidebarItemsProps) => {
       ]
     : [
         ...baseItems,
-        ...(canSeeProjects ? [projectsItem] : []),
+        projectsItem,
         dashboardsItem,
         settingsItem,
       ]
