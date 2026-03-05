@@ -1924,7 +1924,7 @@ function TasksPage() {
                       <Text fontSize="sm" fontWeight="700" mb={2}>
                         Данные задачи
                       </Text>
-                      <Grid templateColumns="120px 1fr" columnGap={3} rowGap={2}>
+                      <Grid templateColumns="max-content 1fr" columnGap={2} rowGap={2}>
                         <Text fontSize="xs" fontWeight="700" color="ui.muted">
                           Состояние:
                         </Text>

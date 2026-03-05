@@ -49,6 +49,9 @@ def resolve_pagination(
 
 def to_task_public(task: Task) -> TaskPublic:
     closed_overdue = bool(task.closed_at and task.closed_at > task.due_date)
+    deadline_state = task.computed_deadline_state
+    if task.closed_at:
+        deadline_state = TaskDeadlineState.RED if closed_overdue else TaskDeadlineState.GREEN
     assignee_pairs: list[tuple[int, str]] = []
     if task.task_assignees:
         for link in task.task_assignees:
@@ -119,7 +122,8 @@ def to_task_public(task: Task) -> TaskPublic:
                 task.controller.full_name if task.controller is not None else None,
                 task.controller.email if task.controller is not None else None,
             ),
-            "deadline_state": task.computed_deadline_state,
+            "deadline_state": deadline_state,
+            "computed_deadline_state": deadline_state,
             "closed_overdue": closed_overdue,
         }
     )
