@@ -121,7 +121,7 @@ type AssigneeOption = {
   label: string
 }
 
-const TASK_TABLE_SETTINGS_KEY = "tracker.tasks.table.v3"
+const TASK_TABLE_SETTINGS_KEY = "tracker.tasks.table.v4"
 const TASK_FILTER_STATE_KEY = "tracker.tasks.filters.v3"
 
 const DEFAULT_FILTERS: TaskFilters = {
@@ -138,9 +138,9 @@ const DEFAULT_SETTINGS: TaskTableSettings = {
     project_name: true,
     assignee_name: true,
     status_name: true,
-    deadline_state: true,
+    deadline_state: false,
     due_date: true,
-    updated_at: true,
+    updated_at: false,
   },
   columnSizing: {},
 }
@@ -453,6 +453,7 @@ function TasksPage() {
   const { data: tasksData, isLoading } = useQuery({
     queryKey: ["tasks", queryParams],
     queryFn: () => trackerApi.listTasks(queryParams),
+    placeholderData: (previousData) => previousData,
   })
 
   const [form, setForm] = useState({
@@ -487,6 +488,7 @@ function TasksPage() {
   })
   const [isEditingTask, setIsEditingTask] = useState(false)
   const [drawerComment, setDrawerComment] = useState("")
+  const [editFiles, setEditFiles] = useState<File[]>([])
   const [taskEditor, setTaskEditor] = useState({
     title: "",
     description: "",
@@ -538,13 +540,10 @@ function TasksPage() {
           return samePrimaryGroup || sameLegacyDepartment
         })
     return allowedUsers.map((user) => {
-      const displayName = user.full_name || user.email || `Пользователь #${user.id}`
-      const email = user.email
+      const displayName = user.full_name?.trim() || user.email || `Пользователь #${user.id}`
       return {
         id: user.id,
-        label: email
-          ? `${displayName} <${email}>`
-          : displayName,
+        label: displayName,
       }
     })
   }, [currentUser, usersData])
@@ -712,6 +711,7 @@ function TasksPage() {
       queryClient.invalidateQueries({ queryKey: ["dashboard-summary"] })
       queryClient.invalidateQueries({ queryKey: ["dashboard-distributions"] })
       setIsEditingTask(false)
+      setEditFiles([])
     },
     onError: (error) => {
       showToast.error("Не удалось обновить задачу", error)
@@ -732,6 +732,45 @@ function TasksPage() {
     },
     onError: (error) => {
       showToast.error("Не удалось добавить комментарий", error)
+    },
+  })
+
+  const uploadEditAttachmentsMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedTaskId) throw new Error("Task is not selected")
+      if (!editFiles.length) return { uploaded: 0, failed: [] as string[] }
+      let uploaded = 0
+      const failed: string[] = []
+      for (const file of editFiles) {
+        try {
+          await trackerApi.uploadAttachment(selectedTaskId, file)
+          uploaded += 1
+        } catch {
+          failed.push(file.name)
+        }
+      }
+      return { uploaded, failed }
+    },
+    onSuccess: ({ uploaded, failed }) => {
+      if (uploaded > 0) {
+        showToast.success("Успешно", `Загружено файлов: ${uploaded}`)
+      }
+      if (failed.length > 0) {
+        showToast.error(
+          "Часть файлов не загружена",
+          `Не удалось загрузить: ${failed.join(", ")}`,
+        )
+      }
+      setEditFiles([])
+      if (selectedTaskId) {
+        queryClient.invalidateQueries({
+          queryKey: ["task-attachments", selectedTaskId],
+        })
+        queryClient.invalidateQueries({ queryKey: ["task-history", selectedTaskId] })
+      }
+    },
+    onError: (error) => {
+      showToast.error("Не удалось загрузить вложения", error)
     },
   })
 
@@ -801,6 +840,7 @@ function TasksPage() {
     resetTaskEditorFromTask(selectedTask)
     setIsEditingTask(false)
     setDrawerComment("")
+    setEditFiles([])
   }, [selectedTask])
 
   useEffect(() => {
@@ -1020,6 +1060,7 @@ function TasksPage() {
     window.history.replaceState({}, "", url)
     setIsEditingTask(false)
     setDrawerComment("")
+    setEditFiles([])
     setSelectedTaskId(null)
     taskDrawer.onClose()
   }
@@ -1369,7 +1410,7 @@ function TasksPage() {
         bg={panelBg}
         boxShadow="sm"
       >
-        <Box overflowX="auto" maxH="68vh" overflowY="auto" minW={0}>
+        <Box overflowX="auto" minW={0}>
           <Table size="sm" sx={{ tableLayout: "fixed" }}>
             <Thead>
               {table.getHeaderGroups().map((headerGroup) => (
@@ -1553,8 +1594,10 @@ function TasksPage() {
             <DrawerCloseButton />
             <DrawerHeader bg={drawerHeaderBg} borderBottomWidth="1px" borderColor="ui.border">
               <HStack justify="space-between" pr={10} gap={2}>
-                <Text fontWeight="700">
-                  {selectedTask ? `Задача #${selectedTask.id}` : "Карточка задачи"}
+                <Text fontWeight="700" noOfLines={1}>
+                  {selectedTask
+                    ? selectedTask.project_name || `Проект #${selectedTask.project_id}`
+                    : "Карточка задачи"}
                 </Text>
                 {selectedTask ? (
                   isEditingTask ? (
@@ -1579,6 +1622,7 @@ function TasksPage() {
                           if (selectedTask) {
                             resetTaskEditorFromTask(selectedTask)
                           }
+                          setEditFiles([])
                           setIsEditingTask(false)
                         }}
                       >
@@ -1782,6 +1826,33 @@ function TasksPage() {
                               Изменение срока и назначений доступно только контроллеру задачи или системному администратору.
                             </Text>
                           ) : null}
+                          <FormControl>
+                            <FormLabel>Вложения</FormLabel>
+                            <Input
+                              type="file"
+                              multiple
+                              onChange={(event) => {
+                                const files = event.target.files
+                                setEditFiles(files ? Array.from(files) : [])
+                              }}
+                            />
+                            <HStack mt={2} justify="space-between" align="center">
+                              <Text fontSize="xs" color="ui.muted">
+                                {editFiles.length
+                                  ? `Выбрано файлов: ${editFiles.length}`
+                                  : "Можно прикрепить файлы при редактировании"}
+                              </Text>
+                              <Button
+                                size="sm"
+                                variant="subtle"
+                                onClick={() => uploadEditAttachmentsMutation.mutate()}
+                                isLoading={uploadEditAttachmentsMutation.isPending}
+                                isDisabled={!selectedTaskId || editFiles.length === 0}
+                              >
+                                Загрузить файлы
+                              </Button>
+                            </HStack>
+                          </FormControl>
                         </VStack>
                       ) : (
                         <>
@@ -1810,29 +1881,70 @@ function TasksPage() {
                     </Box>
 
                     <Box borderWidth="1px" borderColor="ui.border" borderRadius="8px" p={3}>
-                      <Text fontWeight="700" mb={2}>
+                      <Text fontSize="sm" fontWeight="700" mb={2}>
                         Данные задачи
                       </Text>
-                      <VStack align="stretch" spacing={1}>
-                        <Text fontSize="sm">
-                          Состояние: {selectedTask.status_name || selectedTask.workflow_status_name || "-"}
-                        </Text>
-                        <Text fontSize="sm">
-                          Исполнители:{" "}
-                          {selectedTask.assignee_names?.length
-                            ? selectedTask.assignee_names.join(", ")
-                            : selectedTask.assignee_name || "-"}
-                        </Text>
-                        <Text fontSize="sm">Контроллер: {selectedTask.controller_name || "-"}</Text>
-                        <Text fontSize="sm">Департамент: {selectedTask.department_name || "-"}</Text>
-                        <Text fontSize="sm">Срок: {formatDateTime(selectedTask.due_date)}</Text>
-                        <Text fontSize="sm">
-                          Последняя активность:{" "}
-                          {selectedTask.last_activity_at
-                            ? formatDateTime(selectedTask.last_activity_at)
-                            : "-"}
-                        </Text>
-                        <Text fontSize="sm">Кто обновил: {selectedTask.last_activity_by || "-"}</Text>
+                      <VStack align="stretch" spacing={1.5}>
+                        <HStack align="start" justify="space-between" gap={2}>
+                          <Text fontSize="xs" fontWeight="700" color="ui.muted">
+                            Состояние:
+                          </Text>
+                          <Text fontSize="sm" textAlign="right">
+                            {selectedTask.status_name || selectedTask.workflow_status_name || "-"}
+                          </Text>
+                        </HStack>
+                        <HStack align="start" justify="space-between" gap={2}>
+                          <Text fontSize="xs" fontWeight="700" color="ui.muted">
+                            Исполнители:
+                          </Text>
+                          <Text fontSize="sm" textAlign="right">
+                            {selectedTask.assignee_names?.length
+                              ? selectedTask.assignee_names.join(", ")
+                              : selectedTask.assignee_name || "-"}
+                          </Text>
+                        </HStack>
+                        <HStack align="start" justify="space-between" gap={2}>
+                          <Text fontSize="xs" fontWeight="700" color="ui.muted">
+                            Контроллер:
+                          </Text>
+                          <Text fontSize="sm" textAlign="right">
+                            {selectedTask.controller_name || "-"}
+                          </Text>
+                        </HStack>
+                        <HStack align="start" justify="space-between" gap={2}>
+                          <Text fontSize="xs" fontWeight="700" color="ui.muted">
+                            Департамент:
+                          </Text>
+                          <Text fontSize="sm" textAlign="right">
+                            {selectedTask.department_name || "-"}
+                          </Text>
+                        </HStack>
+                        <HStack align="start" justify="space-between" gap={2}>
+                          <Text fontSize="xs" fontWeight="700" color="ui.muted">
+                            Срок:
+                          </Text>
+                          <Text fontSize="sm" textAlign="right">
+                            {formatDate(selectedTask.due_date)}
+                          </Text>
+                        </HStack>
+                        <HStack align="start" justify="space-between" gap={2}>
+                          <Text fontSize="xs" fontWeight="700" color="ui.muted">
+                            Последняя активность:
+                          </Text>
+                          <Text fontSize="sm" textAlign="right">
+                            {selectedTask.last_activity_at
+                              ? formatDate(selectedTask.last_activity_at)
+                              : "-"}
+                          </Text>
+                        </HStack>
+                        <HStack align="start" justify="space-between" gap={2}>
+                          <Text fontSize="xs" fontWeight="700" color="ui.muted">
+                            Кто обновил:
+                          </Text>
+                          <Text fontSize="sm" textAlign="right">
+                            {selectedTask.last_activity_by || "-"}
+                          </Text>
+                        </HStack>
                       </VStack>
                     </Box>
                   </Grid>
@@ -2238,7 +2350,10 @@ function parseSmartQuery(
 }
 
 function formatDate(value: string): string {
-  return new Date(value).toLocaleDateString()
+  if (!value) return "-"
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return "-"
+  return date.toLocaleDateString()
 }
 
 function toDateTimeLocalValue(value: string): string {
@@ -2248,7 +2363,10 @@ function toDateTimeLocalValue(value: string): string {
 }
 
 function formatDateTime(value: string): string {
-  return new Date(value).toLocaleString()
+  if (!value) return "-"
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return "-"
+  return date.toLocaleString()
 }
 
 function mapSortField(value: string): string {

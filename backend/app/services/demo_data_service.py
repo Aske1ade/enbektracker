@@ -142,6 +142,11 @@ DEMO_PROJECTS = [
         "name": "Контрольные поручения Главы государства",
         "description": "Контроль исполнения поручений Главы государства",
     },
+    {
+        "department_key": "DEP_LEGAL",
+        "name": "Поручения АП, АПр",
+        "description": "Поручения Администрации Президента и Аппарата Правительства",
+    },
 ]
 
 DEMO_TASK_BLUEPRINTS = [
@@ -217,25 +222,51 @@ DEMO_TASK_BLUEPRINTS = [
     },
 ]
 
-DEMO_SPECIAL_OVERDUE_TASK = {
-    "department_key": "DEP_MIGRATION",
-    "project_name": "Контрольные поручения Главы государства",
-    "title": (
-        "Касательно Единого Социального Фонда: Министерству труда и социальной "
-        "защиты населения до конца 2025 разработать законопроекты в части внесения "
-        "изменений и дополнений в Социальный кодекс, а также некоторые законодательные "
-        "акты по вопросам реструктуризации социальных трансфертов с переходом от "
-        "категориального подхода к критериям нуждаемости."
-    ),
-    "description": (
-        "<p>пункт 2.3. Министерству труда и социальной защиты населения до конца 2025 "
-        "разработать законопроекты в части внесения изменений и дополнений в Социальный "
-        "кодекс, а также некоторые законодательные акты по вопросам реструктуризации "
-        "социальных трансфертов с переходом от категориального подхода к критериям "
-        "нуждаемости.</p><p>Поручение Президента РК № 25-1380 қбп от 07.03.2025 года.</p>"
-    ),
-    "due_date": datetime(2026, 3, 4, 9, 0, tzinfo=timezone.utc),
-}
+DEMO_SPECIAL_TASKS = [
+    {
+        "department_key": "DEP_LEGAL",
+        "project_name": "Поручения АП, АПр",
+        "title": "Для направления предложения о привлечении к дисциплинарной ответственности политического должностного лица",
+        "description": (
+            "<p>Поручение ЗПМ-РАПр РК Койшибаева Г.Т. № 22-06/7909-4 от 12.01.2026.</p>"
+            "<p>Исполнено 13.01.2026, направлена информация в АПр РК № 01-1-13/Д-81//22-06/7909.</p>"
+            "<p>Дата постановки: 12.01.2026</p><p>Сроки: 19.01.2026</p>"
+        ),
+        "creator_key": "gulmira_alieva",
+        "controller_key": "gulmira_alieva",
+        "assignee_key": "perizat_moldakhmetova",
+        "due_date": datetime(2026, 1, 19, 18, 0, tzinfo=timezone.utc),
+        "created_at": datetime(2026, 1, 12, 10, 0, tzinfo=timezone.utc),
+        "closed_at": datetime(2026, 1, 18, 18, 0, tzinfo=timezone.utc),
+        "close_comment": "Задача закрыта в срок (демо-сценарий).",
+    },
+    {
+        "department_key": "DEP_MIGRATION",
+        "project_name": "Контрольные поручения Главы государства",
+        "title": (
+            "Касательно Единого Социального Фонда: Министерству труда и социальной "
+            "защиты населения до конца 2025 разработать законопроекты в части внесения "
+            "изменений и дополнений в Социальный кодекс, а также некоторые законодательные "
+            "акты по вопросам реструктуризации социальных трансфертов с переходом от "
+            "категориального подхода к критериям нуждаемости."
+        ),
+        "description": (
+            "<p>пункт 2.3. Министерству труда и социальной защиты населения до конца 2025 "
+            "разработать законопроекты в части внесения изменений и дополнений в Социальный "
+            "кодекс, а также некоторые законодательные акты по вопросам реструктуризации "
+            "социальных трансфертов с переходом от категориального подхода к критериям "
+            "нуждаемости.</p><p>Поручение Президента РК № 25-1380 қбп от 07.03.2025 года.</p>"
+            "<p>Дата постановки: 07.03.2025</p><p>Сроки: 04.03.2026</p>"
+        ),
+        "creator_key": "gulmira_alieva",
+        "controller_key": "gulmira_alieva",
+        "assignee_key": "amirzhan_tazhibekov",
+        "due_date": datetime(2026, 3, 4, 9, 0, tzinfo=timezone.utc),
+        "created_at": None,  # set dynamically to "about 20 days ago"
+        "closed_at": None,
+        "close_comment": "",
+    },
+]
 
 DEMO_USERS = [
     {
@@ -277,6 +308,22 @@ DEMO_USERS = [
         "email": "e.ibrayeva@enbek.gov.kz",
         "primary_department": "DEP_LEGAL",
         "department_keys": ["DEP_LEGAL"],
+    },
+    {
+        "key": "perizat_moldakhmetova",
+        "username": "Перизат_Молдахметова",
+        "full_name": "Перизат Молдахметова",
+        "email": "p.moldahmetova@enbek.gov.kz",
+        "primary_department": "DEP_LEGAL",
+        "department_keys": ["DEP_LEGAL"],
+    },
+    {
+        "key": "gulmira_alieva",
+        "username": "g.alieva@enbek.gov.kz",
+        "full_name": "Гульмира Алиева",
+        "email": "g.alieva@enbek.gov.kz",
+        "primary_department": "DEP_LEGAL",
+        "department_keys": ["DEP_LEGAL", "DEP_MIGRATION"],
     },
     {
         "key": "aray_sharafitdinova",
@@ -1184,7 +1231,11 @@ def populate_demo_data(session: Session, actor: User) -> DemoDataSummary:
                 *users_by_department.get("DEP_MIGRATION", []),
             }
         )
-        mtszn_director = rng.choice(mtszn_candidates) if mtszn_candidates else None
+        mtszn_director = (
+            "gulmira_alieva"
+            if "gulmira_alieva" in mtszn_candidates
+            else (rng.choice(mtszn_candidates) if mtszn_candidates else None)
+        )
         director_by_org = {
             "ORG_INFRA": "olzhas_anafin",
             "ORG_MTSZN": mtszn_director,
@@ -1391,7 +1442,7 @@ def populate_demo_data(session: Session, actor: User) -> DemoDataSummary:
                     session,
                     project=project,
                     creator=actor,
-                    title=f"{blueprint['title']} — {departments_by_key[dep_key].name} #{task_index + 1}",
+                    title=str(blueprint["title"]),
                     description=blueprint["description"],
                     assignee_id=assignee.id,
                     controller_id=controller.id,
@@ -1432,38 +1483,76 @@ def populate_demo_data(session: Session, actor: User) -> DemoDataSummary:
                         attachment_ids=[],
                     )
 
-            if dep_key == DEMO_SPECIAL_OVERDUE_TASK["department_key"]:
-                project = next(
-                    (
-                        item
-                        for item in projects
-                        if item.name == DEMO_SPECIAL_OVERDUE_TASK["project_name"]
-                    ),
-                    projects[0],
-                )
-                controller = users_by_key[controller_key]
-                overdue_task = task_service.create_task(
-                    session,
-                    project=project,
-                    creator=actor,
-                    title=str(DEMO_SPECIAL_OVERDUE_TASK["title"]),
-                    description=str(DEMO_SPECIAL_OVERDUE_TASK["description"]),
-                    assignee_id=controller.id,
-                    controller_id=controller.id,
-                    due_date=DEMO_SPECIAL_OVERDUE_TASK["due_date"],
-                )
-                _register_entity(
-                    session,
-                    batch_id=batch_id,
-                    entity_type="task",
-                    entity_id=overdue_task.id,
-                )
+        for special_task_spec in DEMO_SPECIAL_TASKS:
+            dep_key = str(special_task_spec["department_key"])
+            projects = projects_by_department.get(dep_key, [])
+            if not projects:
+                continue
+
+            project = next(
+                (
+                    item
+                    for item in projects
+                    if item.name == str(special_task_spec["project_name"])
+                ),
+                projects[0],
+            )
+
+            assignee_key = str(special_task_spec["assignee_key"])
+            controller_key = str(special_task_spec["controller_key"])
+            creator_key = str(special_task_spec["creator_key"])
+            assignee = users_by_key.get(assignee_key)
+            controller = users_by_key.get(controller_key)
+            creator = users_by_key.get(creator_key)
+            if not assignee or not controller or not creator:
+                continue
+
+            due_date = special_task_spec["due_date"]
+            task = task_service.create_task(
+                session,
+                project=project,
+                creator=creator,
+                title=str(special_task_spec["title"]),
+                description=str(special_task_spec["description"]),
+                assignee_id=assignee.id,
+                controller_id=controller.id,
+                due_date=due_date,
+            )
+            _register_entity(
+                session,
+                batch_id=batch_id,
+                entity_type="task",
+                entity_id=task.id,
+            )
+
+            close_comment = str(special_task_spec.get("close_comment") or "").strip()
+            closed_at = special_task_spec.get("closed_at")
+            if close_comment:
                 task_service.add_task_comment(
                     session,
-                    task=overdue_task,
-                    actor=controller,
-                    comment="Контрольное поручение добавлено в демо-набор как просроченное.",
+                    task=task,
+                    actor=assignee,
+                    comment=close_comment,
                 )
+
+            if closed_at is not None:
+                task = task_service.close_task(
+                    session,
+                    task=task,
+                    actor=controller,
+                    project=project,
+                    close_comment=close_comment or "Задача закрыта в рамках демо-сценария",
+                    attachment_ids=[],
+                )
+
+            created_at = special_task_spec.get("created_at")
+            if created_at is None:
+                created_at = utcnow() - timedelta(days=20)
+            task.created_at = created_at
+            task.updated_at = closed_at or created_at
+            if closed_at is not None:
+                task.closed_at = closed_at
+            session.add(task)
 
         session.commit()
     except IntegrityError as exc:

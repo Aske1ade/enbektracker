@@ -134,7 +134,7 @@ function DesktopAgentBindPage() {
 
           <Button
             variant="primary"
-            onClick={() => window.location.assign("/dashboards")}
+            onClick={() => window.location.assign("/tasks")}
           >
             Открыть Enbek Tracker
           </Button>
