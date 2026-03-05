@@ -1920,7 +1920,15 @@ function TasksPage() {
                       )}
                     </Box>
 
-                    <Box borderWidth="1px" borderColor="ui.border" borderRadius="8px" p={3} minW={0}>
+                    <Box
+                      borderWidth="1px"
+                      borderColor="ui.border"
+                      borderRadius="8px"
+                      p={3}
+                      minW={0}
+                      w="calc(100% + 100px)"
+                      ml="-100px"
+                    >
                       <Text fontSize="sm" fontWeight="700" mb={2}>
                         Данные задачи
                       </Text>
