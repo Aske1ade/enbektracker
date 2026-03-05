@@ -1325,6 +1325,17 @@ def populate_demo_data(session: Session, actor: User) -> DemoDataSummary:
                 deadline_yellow_days=3,
                 deadline_normal_days=5,
             )
+            if (
+                organization_key == "ORG_MTSZN"
+                and str(project_spec["name"]) == "Поручения АП, АПр"
+            ):
+                for mtszn_dep_key in ("DEP_LEGAL", "DEP_MIGRATION"):
+                    session.add(
+                        ProjectDepartment(
+                            project_id=project.id,
+                            department_id=departments_by_key[mtszn_dep_key].id,
+                        )
+                    )
             projects_by_department[dep_key].append(project)
             _register_entity(
                 session,
