@@ -1920,11 +1920,16 @@ function TasksPage() {
                       )}
                     </Box>
 
-                    <Box borderWidth="1px" borderColor="ui.border" borderRadius="8px" p={3}>
+                    <Box borderWidth="1px" borderColor="ui.border" borderRadius="8px" p={3} minW={0}>
                       <Text fontSize="sm" fontWeight="700" mb={2}>
                         Данные задачи
                       </Text>
-                      <Grid templateColumns="max-content 1fr" columnGap={2} rowGap={2}>
+                      <Grid
+                        templateColumns="minmax(110px, 140px) minmax(0, 1fr)"
+                        columnGap={2}
+                        rowGap={2}
+                        alignItems="start"
+                      >
                         <Text fontSize="xs" fontWeight="700" color="ui.muted">
                           Состояние:
                         </Text>
@@ -1943,7 +1948,7 @@ function TasksPage() {
                         <Text fontSize="xs" fontWeight="700" color="ui.muted">
                           Исполнители:
                         </Text>
-                        <Text fontSize="sm">
+                        <Text fontSize="sm" minW={0} wordBreak="break-word" overflowWrap="anywhere">
                           {selectedTask.assignee_names?.length
                             ? selectedTask.assignee_names.join(", ")
                             : selectedTask.assignee_name || "-"}
@@ -1951,25 +1956,33 @@ function TasksPage() {
                         <Text fontSize="xs" fontWeight="700" color="ui.muted">
                           Контроллер:
                         </Text>
-                        <Text fontSize="sm">{selectedTask.controller_name || "-"}</Text>
+                        <Text fontSize="sm" minW={0} wordBreak="break-word" overflowWrap="anywhere">
+                          {selectedTask.controller_name || "-"}
+                        </Text>
                         <Text fontSize="xs" fontWeight="700" color="ui.muted">
                           Департамент:
                         </Text>
-                        <Text fontSize="sm">{selectedTask.department_name || "-"}</Text>
+                        <Text fontSize="sm" minW={0} wordBreak="break-word" overflowWrap="anywhere">
+                          {selectedTask.department_name || "-"}
+                        </Text>
                         <Text fontSize="xs" fontWeight="700" color="ui.muted">
                           Срок:
                         </Text>
-                        <Text fontSize="sm">{formatDate(selectedTask.due_date)}</Text>
+                        <Text fontSize="sm" minW={0} wordBreak="break-word" overflowWrap="anywhere">
+                          {formatDate(selectedTask.due_date)}
+                        </Text>
                         <Text fontSize="xs" fontWeight="700" color="ui.muted">
                           Последняя активность:
                         </Text>
-                        <Text fontSize="sm">
+                        <Text fontSize="sm" minW={0} wordBreak="break-word" overflowWrap="anywhere">
                           {selectedTask.last_activity_at ? formatDate(selectedTask.last_activity_at) : "-"}
                         </Text>
                         <Text fontSize="xs" fontWeight="700" color="ui.muted">
                           Кто обновил:
                         </Text>
-                        <Text fontSize="sm">{selectedTask.last_activity_by || "-"}</Text>
+                        <Text fontSize="sm" minW={0} wordBreak="break-word" overflowWrap="anywhere">
+                          {selectedTask.last_activity_by || "-"}
+                        </Text>
                       </Grid>
                     </Box>
                   </Grid>
