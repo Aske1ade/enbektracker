@@ -1925,7 +1925,7 @@ function TasksPage() {
                         Данные задачи
                       </Text>
                       <Grid
-                        templateColumns="minmax(110px, 140px) minmax(0, 1fr)"
+                        templateColumns="minmax(100px, 100px) minmax(0, 1fr)"
                         columnGap={2}
                         rowGap={2}
                         alignItems="start"
