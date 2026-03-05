@@ -587,7 +587,7 @@ function TasksPage() {
   const isSystemAdmin = Boolean(
     currentUser?.is_superuser || currentUser?.system_role === "system_admin",
   )
-  const isRegularUser = Boolean(currentUser) && !isSystemAdmin
+  const canAssignTasks = Boolean(currentUser?.can_assign_tasks || isSystemAdmin)
   const selectedTaskProjectMembers = useMemo<ProjectMember[]>(
     () => (selectedTaskProjectMembersData?.data ?? []).filter((member) => member.is_active),
     [selectedTaskProjectMembersData?.data],
@@ -632,7 +632,7 @@ function TasksPage() {
   )
 
   const createMemberOptions = useMemo(() => {
-    if (isRegularUser && currentUser?.id) {
+    if (!canAssignTasks && currentUser?.id) {
       return memberOptions.filter((member) => member.id === currentUser.id)
     }
     if (form.project_id && createProjectMemberOptions.length > 0) {
@@ -643,7 +643,7 @@ function TasksPage() {
     createProjectMemberOptions,
     currentUser?.id,
     form.project_id,
-    isRegularUser,
+    canAssignTasks,
     memberOptions,
   ])
 
@@ -657,7 +657,7 @@ function TasksPage() {
         ),
       )
       const effectiveAssigneeIds =
-        isRegularUser && currentUser?.id
+        !canAssignTasks && currentUser?.id
           ? [currentUser.id]
           : normalizedAssigneeIds
       if (effectiveAssigneeIds.length === 0) {
@@ -670,7 +670,7 @@ function TasksPage() {
         assignee_id: effectiveAssigneeIds[0] ?? null,
         assignee_ids: effectiveAssigneeIds,
         controller_id:
-          isRegularUser || !form.controller_id
+          !canAssignTasks || !form.controller_id
             ? null
             : Number(form.controller_id),
         due_date: new Date(form.due_date).toISOString(),
@@ -2179,7 +2179,7 @@ function TasksPage() {
                 </Select>
               </FormControl>
 
-              {isRegularUser ? (
+              {!canAssignTasks ? (
                 <HStack spacing={2} justify="flex-start">
                   <Tooltip
                     hasArrow

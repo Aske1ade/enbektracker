@@ -28,6 +28,7 @@ export interface TrackerUser {
   department_name?: string | null
   created_at?: string
   updated_at?: string
+  can_assign_tasks?: boolean
 }
 
 export interface Project {

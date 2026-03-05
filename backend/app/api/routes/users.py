@@ -147,11 +147,16 @@ def update_password_me(
 
 
 @router.get("/me", response_model=UserPublic)
-def read_user_me(current_user: CurrentUser) -> Any:
+def read_user_me(session: SessionDep, current_user: CurrentUser) -> Any:
     """
     Get current user.
     """
-    return current_user
+    can_assign_tasks = rbac_service.can_assign_task_to_others(
+        session=session,
+        user=current_user,
+    )
+    payload = UserPublic.model_validate(current_user)
+    return payload.model_copy(update={"can_assign_tasks": can_assign_tasks})
 
 
 @router.delete("/me", response_model=Message)

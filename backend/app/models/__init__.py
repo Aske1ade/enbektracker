@@ -91,6 +91,7 @@ class UpdatePassword(SQLModel):
 # Properties to return via API, id is always required
 class UserPublic(UserBase):
     id: int
+    can_assign_tasks: bool | None = None
 
 
 class UsersPublic(SQLModel):
