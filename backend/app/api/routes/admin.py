@@ -794,8 +794,27 @@ def get_task_policy(
         key=system_settings_service.TASK_ALLOW_BACKDATED_CREATION_KEY,
         default=False,
     )
+    overdue_desktop_reminders_enabled = system_settings_service.get_bool(
+        session,
+        key=system_settings_service.TASK_OVERDUE_DESKTOP_REMINDERS_ENABLED_KEY,
+        default=True,
+    )
+    overdue_desktop_reminder_interval_minutes = system_settings_service.get_int(
+        session,
+        key=system_settings_service.TASK_OVERDUE_DESKTOP_REMINDER_INTERVAL_MINUTES_KEY,
+        default=system_settings_service.TASK_OVERDUE_DESKTOP_REMINDER_INTERVAL_MIN,
+    )
+    overdue_desktop_reminder_interval_minutes = max(
+        system_settings_service.TASK_OVERDUE_DESKTOP_REMINDER_INTERVAL_MIN,
+        min(
+            overdue_desktop_reminder_interval_minutes,
+            system_settings_service.TASK_OVERDUE_DESKTOP_REMINDER_INTERVAL_MAX,
+        ),
+    )
     return AdminTaskPolicyPublic(
         allow_backdated_creation=allow_backdated_creation,
+        overdue_desktop_reminders_enabled=overdue_desktop_reminders_enabled,
+        overdue_desktop_reminder_interval_minutes=overdue_desktop_reminder_interval_minutes,
     )
 
 
@@ -806,12 +825,40 @@ def update_task_policy(
     current_user: CurrentUser,
 ) -> AdminTaskPolicyPublic:
     rbac_service.require_system_admin(current_user)
+    if (
+        payload.overdue_desktop_reminder_interval_minutes
+        < system_settings_service.TASK_OVERDUE_DESKTOP_REMINDER_INTERVAL_MIN
+        or payload.overdue_desktop_reminder_interval_minutes
+        > system_settings_service.TASK_OVERDUE_DESKTOP_REMINDER_INTERVAL_MAX
+    ):
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                "Интервал повторных desktop-напоминаний должен быть в диапазоне "
+                f"{system_settings_service.TASK_OVERDUE_DESKTOP_REMINDER_INTERVAL_MIN}-"
+                f"{system_settings_service.TASK_OVERDUE_DESKTOP_REMINDER_INTERVAL_MAX} минут"
+            ),
+        )
     allow_backdated_creation = system_settings_service.set_bool(
         session,
         key=system_settings_service.TASK_ALLOW_BACKDATED_CREATION_KEY,
         value=payload.allow_backdated_creation,
     )
-    return AdminTaskPolicyPublic(allow_backdated_creation=allow_backdated_creation)
+    overdue_desktop_reminders_enabled = system_settings_service.set_bool(
+        session,
+        key=system_settings_service.TASK_OVERDUE_DESKTOP_REMINDERS_ENABLED_KEY,
+        value=payload.overdue_desktop_reminders_enabled,
+    )
+    overdue_desktop_reminder_interval_minutes = system_settings_service.set_int(
+        session,
+        key=system_settings_service.TASK_OVERDUE_DESKTOP_REMINDER_INTERVAL_MINUTES_KEY,
+        value=payload.overdue_desktop_reminder_interval_minutes,
+    )
+    return AdminTaskPolicyPublic(
+        allow_backdated_creation=allow_backdated_creation,
+        overdue_desktop_reminders_enabled=overdue_desktop_reminders_enabled,
+        overdue_desktop_reminder_interval_minutes=overdue_desktop_reminder_interval_minutes,
+    )
 
 
 @router.get("/desktop-agent", response_model=AdminDesktopAgentPublic)

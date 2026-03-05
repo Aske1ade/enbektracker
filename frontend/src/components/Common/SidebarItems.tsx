@@ -23,11 +23,15 @@ type SidebarItem = {
 }
 
 const baseItems: SidebarItem[] = [
-  { icon: FiGrid, title: "Дашборды", path: "/dashboards" },
   { icon: FiClipboard, title: "Задачи", path: "/tasks" },
   { icon: FiCalendar, title: "Календарь", path: "/calendar" },
 ]
 
+const dashboardsItem: SidebarItem = {
+  icon: FiGrid,
+  title: "Дашборды",
+  path: "/dashboards",
+}
 const projectsItem: SidebarItem = { icon: FiFolder, title: "Проекты", path: "/projects" }
 const reportsItem: SidebarItem = { icon: FiBarChart2, title: "Отчёты", path: "/reports" }
 
@@ -94,12 +98,18 @@ const SidebarItems = ({ onClose }: SidebarItemsProps) => {
     ? [
         ...baseItems,
         ...(canSeeProjects ? [projectsItem] : []),
+        dashboardsItem,
         reportsItem,
         ...leadershipItems,
         ...(isAdmin ? [adminItem] : []),
         settingsItem,
       ]
-    : [...baseItems, ...(canSeeProjects ? [projectsItem] : []), settingsItem]
+    : [
+        ...baseItems,
+        ...(canSeeProjects ? [projectsItem] : []),
+        dashboardsItem,
+        settingsItem,
+      ]
 
   const listItems = finalItems.map(({ icon, title, path }) => (
     <Flex

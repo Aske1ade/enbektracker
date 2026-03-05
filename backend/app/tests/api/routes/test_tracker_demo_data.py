@@ -29,6 +29,31 @@ def test_tracker_admin_demo_data_toggle(
     assert enable_data["credentials"]
     assert enable_data["credentials"][0]["password"]
 
+    special_task_response = client.get(
+        f"{settings.API_V1_STR}/tasks/",
+        headers=superuser_token_headers,
+        params={
+            "search": "Касательно Единого Социального Фонда",
+            "include_completed": True,
+            "page": 1,
+            "page_size": 50,
+        },
+    )
+    assert special_task_response.status_code == 200, special_task_response.text
+    special_rows = special_task_response.json()["data"]
+    assert special_rows
+    special_task = next(
+        (
+            row
+            for row in special_rows
+            if "Касательно Единого Социального Фонда" in str(row.get("title") or "")
+        ),
+        None,
+    )
+    assert special_task is not None
+    assert special_task["is_overdue"] is True
+    assert str(special_task["due_date"]).startswith("2026-03-04")
+
     status_response = client.get(
         f"{settings.API_V1_STR}/admin/demo-data",
         headers=superuser_token_headers,

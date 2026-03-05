@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi.testclient import TestClient
 
 from app.core.config import settings
+from app.jobs import deadline_notifications as deadline_notifications_job
 from app.tests.utils.tracker import (
     add_project_member,
     auth_headers,
@@ -187,6 +188,236 @@ def test_tracker_desktop_events_poll_cursor(
     second_ids = [event["id"] for event in second_payload["data"]]
 
     assert all(event_id > max(first_ids) for event_id in second_ids)
+
+
+def test_overdue_repeat_desktop_events_for_all_assignees(
+    client: TestClient,
+    superuser_token_headers: dict[str, str],
+    monkeypatch,
+) -> None:
+    department_id = create_department_via_api(
+        client,
+        superuser_token_headers,
+        name=f"desk-repeat-dep-{random_lower_string()[:8]}",
+        code=f"DR_{random_lower_string()[:6]}",
+    )
+    project_id = create_project_via_api(
+        client,
+        superuser_token_headers,
+        name=f"desk-repeat-proj-{random_lower_string()[:8]}",
+        department_id=department_id,
+        require_close_comment=False,
+        require_close_attachment=False,
+    )
+    statuses = get_project_statuses(client, superuser_token_headers, project_id)
+    status_new_id = next(item["id"] for item in statuses if item["code"] == "new")
+
+    executor_1 = create_user_via_api(client, superuser_token_headers, system_role="user")
+    executor_2 = create_user_via_api(client, superuser_token_headers, system_role="user")
+    controller = create_user_via_api(client, superuser_token_headers, system_role="controller")
+    add_project_member(
+        client,
+        superuser_token_headers,
+        project_id=project_id,
+        user_id=executor_1.id,
+        role="executor",
+    )
+    add_project_member(
+        client,
+        superuser_token_headers,
+        project_id=project_id,
+        user_id=executor_2.id,
+        role="executor",
+    )
+    add_project_member(
+        client,
+        superuser_token_headers,
+        project_id=project_id,
+        user_id=controller.id,
+        role="controller",
+    )
+
+    task = create_task_via_api(
+        client,
+        superuser_token_headers,
+        project_id=project_id,
+        status_id=status_new_id,
+        assignee_id=executor_1.id,
+        controller_id=controller.id,
+        title=f"desk-repeat-task-{random_lower_string()[:8]}",
+    )
+    task_id = task["id"]
+
+    update_response = client.patch(
+        f"{settings.API_V1_STR}/tasks/{task_id}",
+        headers=superuser_token_headers,
+        json={
+            "assignee_id": executor_1.id,
+            "assignee_ids": [executor_1.id, executor_2.id],
+            "due_date": (datetime.now(timezone.utc) - timedelta(days=1)).isoformat(),
+        },
+    )
+    assert update_response.status_code == 200, update_response.text
+
+    policy_response = client.put(
+        f"{settings.API_V1_STR}/admin/task-policy",
+        headers=superuser_token_headers,
+        json={
+            "allow_backdated_creation": False,
+            "overdue_desktop_reminders_enabled": True,
+            "overdue_desktop_reminder_interval_minutes": 2,
+        },
+    )
+    assert policy_response.status_code == 200, policy_response.text
+
+    executor_1_headers = auth_headers(client, executor_1.email, executor_1.password)
+    executor_2_headers = auth_headers(client, executor_2.email, executor_2.password)
+
+    baseline_1 = client.get(
+        f"{settings.API_V1_STR}/desktop-events/poll",
+        headers=executor_1_headers,
+        params={"limit": 200},
+    )
+    baseline_2 = client.get(
+        f"{settings.API_V1_STR}/desktop-events/poll",
+        headers=executor_2_headers,
+        params={"limit": 200},
+    )
+    assert baseline_1.status_code == 200, baseline_1.text
+    assert baseline_2.status_code == 200, baseline_2.text
+    cursor_1 = baseline_1.json()["next_cursor"]
+    cursor_2 = baseline_2.json()["next_cursor"]
+
+    base_now = datetime(2026, 3, 5, 10, 0, tzinfo=timezone.utc)
+    monkeypatch.setattr(deadline_notifications_job, "utcnow", lambda: base_now)
+    deadline_notifications_job.send_deadline_notifications()
+
+    after_first_1 = client.get(
+        f"{settings.API_V1_STR}/desktop-events/poll",
+        headers=executor_1_headers,
+        params={"limit": 200, "cursor": cursor_1},
+    )
+    after_first_2 = client.get(
+        f"{settings.API_V1_STR}/desktop-events/poll",
+        headers=executor_2_headers,
+        params={"limit": 200, "cursor": cursor_2},
+    )
+    assert after_first_1.status_code == 200, after_first_1.text
+    assert after_first_2.status_code == 200, after_first_2.text
+    events_first_1 = [
+        event
+        for event in after_first_1.json()["data"]
+        if event["task_id"] == task_id and event["event_type"] == "overdue"
+    ]
+    events_first_2 = [
+        event
+        for event in after_first_2.json()["data"]
+        if event["task_id"] == task_id and event["event_type"] == "overdue"
+    ]
+    assert events_first_1
+    assert events_first_2
+
+    cursor_1 = after_first_1.json()["next_cursor"]
+    cursor_2 = after_first_2.json()["next_cursor"]
+    deadline_notifications_job.send_deadline_notifications()
+
+    same_slot_1 = client.get(
+        f"{settings.API_V1_STR}/desktop-events/poll",
+        headers=executor_1_headers,
+        params={"limit": 200, "cursor": cursor_1},
+    )
+    same_slot_2 = client.get(
+        f"{settings.API_V1_STR}/desktop-events/poll",
+        headers=executor_2_headers,
+        params={"limit": 200, "cursor": cursor_2},
+    )
+    assert same_slot_1.status_code == 200, same_slot_1.text
+    assert same_slot_2.status_code == 200, same_slot_2.text
+    assert not [
+        event
+        for event in same_slot_1.json()["data"]
+        if event["task_id"] == task_id and event["event_type"] == "overdue"
+    ]
+    assert not [
+        event
+        for event in same_slot_2.json()["data"]
+        if event["task_id"] == task_id and event["event_type"] == "overdue"
+    ]
+
+    cursor_1 = same_slot_1.json()["next_cursor"]
+    cursor_2 = same_slot_2.json()["next_cursor"]
+    monkeypatch.setattr(
+        deadline_notifications_job,
+        "utcnow",
+        lambda: base_now + timedelta(minutes=2, seconds=1),
+    )
+    deadline_notifications_job.send_deadline_notifications()
+
+    next_slot_1 = client.get(
+        f"{settings.API_V1_STR}/desktop-events/poll",
+        headers=executor_1_headers,
+        params={"limit": 200, "cursor": cursor_1},
+    )
+    next_slot_2 = client.get(
+        f"{settings.API_V1_STR}/desktop-events/poll",
+        headers=executor_2_headers,
+        params={"limit": 200, "cursor": cursor_2},
+    )
+    assert next_slot_1.status_code == 200, next_slot_1.text
+    assert next_slot_2.status_code == 200, next_slot_2.text
+    assert [
+        event
+        for event in next_slot_1.json()["data"]
+        if event["task_id"] == task_id and event["event_type"] == "overdue"
+    ]
+    assert [
+        event
+        for event in next_slot_2.json()["data"]
+        if event["task_id"] == task_id and event["event_type"] == "overdue"
+    ]
+
+    cursor_1 = next_slot_1.json()["next_cursor"]
+    cursor_2 = next_slot_2.json()["next_cursor"]
+    disable_response = client.put(
+        f"{settings.API_V1_STR}/admin/task-policy",
+        headers=superuser_token_headers,
+        json={
+            "allow_backdated_creation": False,
+            "overdue_desktop_reminders_enabled": False,
+            "overdue_desktop_reminder_interval_minutes": 2,
+        },
+    )
+    assert disable_response.status_code == 200, disable_response.text
+
+    monkeypatch.setattr(
+        deadline_notifications_job,
+        "utcnow",
+        lambda: base_now + timedelta(minutes=4, seconds=1),
+    )
+    deadline_notifications_job.send_deadline_notifications()
+
+    disabled_1 = client.get(
+        f"{settings.API_V1_STR}/desktop-events/poll",
+        headers=executor_1_headers,
+        params={"limit": 200, "cursor": cursor_1},
+    )
+    disabled_2 = client.get(
+        f"{settings.API_V1_STR}/desktop-events/poll",
+        headers=executor_2_headers,
+        params={"limit": 200, "cursor": cursor_2},
+    )
+    assert disabled_1.status_code == 200, disabled_1.text
+    assert disabled_2.status_code == 200, disabled_2.text
+    assert not [
+        event
+        for event in disabled_1.json()["data"]
+        if event["task_id"] == task_id and event["event_type"] == "overdue"
+    ]
+    assert not [
+        event
+        for event in disabled_2.json()["data"]
+        if event["task_id"] == task_id and event["event_type"] == "overdue"
+    ]
 
 
 def test_submit_review_notifies_project_manager(

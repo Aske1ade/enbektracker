@@ -16,10 +16,14 @@ class AdminDesktopEventsTestResponse(SQLModel):
 
 class AdminTaskPolicyPublic(SQLModel):
     allow_backdated_creation: bool
+    overdue_desktop_reminders_enabled: bool
+    overdue_desktop_reminder_interval_minutes: int
 
 
 class AdminTaskPolicyUpdate(SQLModel):
     allow_backdated_creation: bool
+    overdue_desktop_reminders_enabled: bool
+    overdue_desktop_reminder_interval_minutes: int
 
 
 class AdminDesktopAgentPublic(SQLModel):

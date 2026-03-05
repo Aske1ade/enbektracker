@@ -90,6 +90,12 @@ const emptyUserForm: UserFormState = {
   bind_project_role: "contributor",
 }
 
+const defaultTaskPolicyDraft = {
+  allow_backdated_creation: false,
+  overdue_desktop_reminders_enabled: true,
+  overdue_desktop_reminder_interval_minutes: 2,
+}
+
 const ROLE_META: Record<
   UserFormState["system_role"],
   { label: string; hint: string }
@@ -186,6 +192,7 @@ function AdminPage() {
   const [taskBulkControllerId, setTaskBulkControllerId] = useState("")
   const [taskBulkIncludeCompleted, setTaskBulkIncludeCompleted] = useState(true)
   const [editForm, setEditForm] = useState<UserFormState>(emptyUserForm)
+  const [taskPolicyDraft, setTaskPolicyDraft] = useState(defaultTaskPolicyDraft)
   const desktopAgentInputRef = useRef<HTMLInputElement | null>(null)
 
   const { data: usersData, isLoading } = useQuery({
@@ -252,6 +259,18 @@ function AdminPage() {
   useEffect(() => {
     setTaskBulkGroupId("")
   }, [taskBulkOrgId])
+
+  useEffect(() => {
+    if (!taskPolicy) return
+    setTaskPolicyDraft({
+      allow_backdated_creation: Boolean(taskPolicy.allow_backdated_creation),
+      overdue_desktop_reminders_enabled: Boolean(
+        taskPolicy.overdue_desktop_reminders_enabled,
+      ),
+      overdue_desktop_reminder_interval_minutes:
+        Number(taskPolicy.overdue_desktop_reminder_interval_minutes) || 2,
+    })
+  }, [taskPolicy])
 
   const filteredUsers = useMemo(() => {
     const rows = usersData?.data ?? []
@@ -343,6 +362,29 @@ function AdminPage() {
     })
     return rows
   }, [demoData?.credentials, demoSort])
+
+  const taskPolicyIntervalError = useMemo(() => {
+    const interval = Number(taskPolicyDraft.overdue_desktop_reminder_interval_minutes)
+    if (!Number.isFinite(interval) || !Number.isInteger(interval)) {
+      return "Интервал должен быть целым числом"
+    }
+    if (interval < 2 || interval > 120) {
+      return "Интервал должен быть в диапазоне 2-120 минут"
+    }
+    return ""
+  }, [taskPolicyDraft.overdue_desktop_reminder_interval_minutes])
+
+  const isTaskPolicyDirty = useMemo(() => {
+    if (!taskPolicy) return false
+    return (
+      Boolean(taskPolicy.allow_backdated_creation) !==
+        Boolean(taskPolicyDraft.allow_backdated_creation) ||
+      Boolean(taskPolicy.overdue_desktop_reminders_enabled) !==
+        Boolean(taskPolicyDraft.overdue_desktop_reminders_enabled) ||
+      Number(taskPolicy.overdue_desktop_reminder_interval_minutes) !==
+        Number(taskPolicyDraft.overdue_desktop_reminder_interval_minutes)
+    )
+  }, [taskPolicy, taskPolicyDraft])
 
   const toggleUserSort = (key: AdminUserSortKey) => {
     setUserSort((prev) =>
@@ -518,10 +560,21 @@ function AdminPage() {
   })
 
   const taskPolicyMutation = useMutation({
-    mutationFn: (allow_backdated_creation: boolean) =>
-      trackerApi.updateAdminTaskPolicy({ allow_backdated_creation }),
+    mutationFn: (payload: {
+      allow_backdated_creation: boolean
+      overdue_desktop_reminders_enabled: boolean
+      overdue_desktop_reminder_interval_minutes: number
+    }) => trackerApi.updateAdminTaskPolicy(payload),
     onSuccess: (data) => {
       queryClient.setQueryData(["admin-task-policy"], data)
+      setTaskPolicyDraft({
+        allow_backdated_creation: Boolean(data.allow_backdated_creation),
+        overdue_desktop_reminders_enabled: Boolean(
+          data.overdue_desktop_reminders_enabled,
+        ),
+        overdue_desktop_reminder_interval_minutes:
+          Number(data.overdue_desktop_reminder_interval_minutes) || 2,
+      })
       showToast.success("Успешно", "Политика создания задач обновлена")
     },
     onError: (error) =>
@@ -673,31 +726,94 @@ function AdminPage() {
         bg="white"
         mb={4}
       >
-        <HStack justify="space-between" align="center" mb={3}>
-          <Box>
-            <Text fontWeight="700">Политика задач</Text>
-            <Text color="gray.600" fontSize="sm">
-              Разрешение на создание задач со сроком в прошлом
-            </Text>
-          </Box>
-          <FormControl
-            display="flex"
-            alignItems="center"
-            justifyContent="flex-end"
-            maxW="420px"
-          >
-            <FormLabel m={0} mr={3}>
-              Разрешить создавать задачи задним числом
-            </FormLabel>
+        <Text fontWeight="700" mb={1}>
+          Политика задач
+        </Text>
+        <Text color="gray.600" fontSize="sm" mb={3}>
+          Управление созданием задач задним числом и повторными desktop-напоминаниями о просрочке.
+        </Text>
+        <Grid templateColumns={{ base: "1fr", md: "1fr 1fr" }} gap={3}>
+          <FormControl display="flex" alignItems="center" justifyContent="space-between">
+            <FormLabel m={0}>Разрешить создавать задачи задним числом</FormLabel>
             <Switch
-              isChecked={Boolean(taskPolicy?.allow_backdated_creation)}
+              isChecked={Boolean(taskPolicyDraft.allow_backdated_creation)}
               isDisabled={taskPolicyLoading || taskPolicyMutation.isPending}
               onChange={(event) =>
-                taskPolicyMutation.mutate(event.target.checked)
+                setTaskPolicyDraft((prev) => ({
+                  ...prev,
+                  allow_backdated_creation: event.target.checked,
+                }))
               }
             />
           </FormControl>
-        </HStack>
+          <FormControl display="flex" alignItems="center" justifyContent="space-between">
+            <FormLabel m={0}>Повторные desktop-напоминания о просрочке</FormLabel>
+            <Switch
+              isChecked={Boolean(taskPolicyDraft.overdue_desktop_reminders_enabled)}
+              isDisabled={taskPolicyLoading || taskPolicyMutation.isPending}
+              onChange={(event) =>
+                setTaskPolicyDraft((prev) => ({
+                  ...prev,
+                  overdue_desktop_reminders_enabled: event.target.checked,
+                }))
+              }
+            />
+          </FormControl>
+          <FormControl
+            isInvalid={Boolean(taskPolicyIntervalError)}
+            isDisabled={taskPolicyLoading || taskPolicyMutation.isPending}
+          >
+            <FormLabel>Интервал повторов (минуты)</FormLabel>
+            <Input
+              type="number"
+              min={2}
+              max={120}
+              step={1}
+              value={taskPolicyDraft.overdue_desktop_reminder_interval_minutes}
+              onChange={(event) => {
+                const parsed = Number(event.target.value)
+                setTaskPolicyDraft((prev) => ({
+                  ...prev,
+                  overdue_desktop_reminder_interval_minutes: Number.isFinite(parsed)
+                    ? parsed
+                    : prev.overdue_desktop_reminder_interval_minutes,
+                }))
+              }}
+            />
+            {taskPolicyIntervalError ? (
+              <Text mt={1} fontSize="xs" color="red.500">
+                {taskPolicyIntervalError}
+              </Text>
+            ) : null}
+          </FormControl>
+          <FormControl>
+            <FormLabel visibility="hidden">Сохранить</FormLabel>
+            <Button
+              onClick={() =>
+                taskPolicyMutation.mutate({
+                  allow_backdated_creation: Boolean(
+                    taskPolicyDraft.allow_backdated_creation,
+                  ),
+                  overdue_desktop_reminders_enabled: Boolean(
+                    taskPolicyDraft.overdue_desktop_reminders_enabled,
+                  ),
+                  overdue_desktop_reminder_interval_minutes: Number(
+                    taskPolicyDraft.overdue_desktop_reminder_interval_minutes,
+                  ),
+                })
+              }
+              isDisabled={
+                taskPolicyLoading ||
+                taskPolicyMutation.isPending ||
+                !isTaskPolicyDirty ||
+                Boolean(taskPolicyIntervalError)
+              }
+              width={{ base: "100%", md: "fit-content" }}
+            >
+              Сохранить
+            </Button>
+          </FormControl>
+        </Grid>
       </Box>
 
       <Box

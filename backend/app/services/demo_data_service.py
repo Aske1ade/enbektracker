@@ -217,6 +217,26 @@ DEMO_TASK_BLUEPRINTS = [
     },
 ]
 
+DEMO_SPECIAL_OVERDUE_TASK = {
+    "department_key": "DEP_MIGRATION",
+    "project_name": "Контрольные поручения Главы государства",
+    "title": (
+        "Касательно Единого Социального Фонда: Министерству труда и социальной "
+        "защиты населения до конца 2025 разработать законопроекты в части внесения "
+        "изменений и дополнений в Социальный кодекс, а также некоторые законодательные "
+        "акты по вопросам реструктуризации социальных трансфертов с переходом от "
+        "категориального подхода к критериям нуждаемости."
+    ),
+    "description": (
+        "<p>пункт 2.3. Министерству труда и социальной защиты населения до конца 2025 "
+        "разработать законопроекты в части внесения изменений и дополнений в Социальный "
+        "кодекс, а также некоторые законодательные акты по вопросам реструктуризации "
+        "социальных трансфертов с переходом от категориального подхода к критериям "
+        "нуждаемости.</p><p>Поручение Президента РК № 25-1380 қбп от 07.03.2025 года.</p>"
+    ),
+    "due_date": datetime(2026, 3, 4, 9, 0, tzinfo=timezone.utc),
+}
+
 DEMO_USERS = [
     {
         "key": "bakhytzhan_mynbaev",
@@ -1411,6 +1431,39 @@ def populate_demo_data(session: Session, actor: User) -> DemoDataSummary:
                         close_comment="Задача закрыта в рамках демо-сценария",
                         attachment_ids=[],
                     )
+
+            if dep_key == DEMO_SPECIAL_OVERDUE_TASK["department_key"]:
+                project = next(
+                    (
+                        item
+                        for item in projects
+                        if item.name == DEMO_SPECIAL_OVERDUE_TASK["project_name"]
+                    ),
+                    projects[0],
+                )
+                controller = users_by_key[controller_key]
+                overdue_task = task_service.create_task(
+                    session,
+                    project=project,
+                    creator=actor,
+                    title=str(DEMO_SPECIAL_OVERDUE_TASK["title"]),
+                    description=str(DEMO_SPECIAL_OVERDUE_TASK["description"]),
+                    assignee_id=controller.id,
+                    controller_id=controller.id,
+                    due_date=DEMO_SPECIAL_OVERDUE_TASK["due_date"],
+                )
+                _register_entity(
+                    session,
+                    batch_id=batch_id,
+                    entity_type="task",
+                    entity_id=overdue_task.id,
+                )
+                task_service.add_task_comment(
+                    session,
+                    task=overdue_task,
+                    actor=controller,
+                    comment="Контрольное поручение добавлено в демо-набор как просроченное.",
+                )
 
         session.commit()
     except IntegrityError as exc:

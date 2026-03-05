@@ -459,6 +459,8 @@ export interface DemoDataSummary {
 
 export interface AdminTaskPolicy {
   allow_backdated_creation: boolean
+  overdue_desktop_reminders_enabled: boolean
+  overdue_desktop_reminder_interval_minutes: number
 }
 
 export interface AdminDesktopAgent {

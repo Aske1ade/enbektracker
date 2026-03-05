@@ -5,6 +5,12 @@ from sqlmodel import Session, select
 from app.models import SystemSetting
 
 TASK_ALLOW_BACKDATED_CREATION_KEY = "tasks.allow_backdated_creation"
+TASK_OVERDUE_DESKTOP_REMINDERS_ENABLED_KEY = "tasks.overdue_desktop_reminders_enabled"
+TASK_OVERDUE_DESKTOP_REMINDER_INTERVAL_MINUTES_KEY = (
+    "tasks.overdue_desktop_reminder_interval_minutes"
+)
+TASK_OVERDUE_DESKTOP_REMINDER_INTERVAL_MIN = 2
+TASK_OVERDUE_DESKTOP_REMINDER_INTERVAL_MAX = 120
 DEMO_DATA_LOCKED_KEY = "demo_data.locked"
 
 
@@ -92,3 +98,41 @@ def set_bool(
     session.add(record)
     session.commit()
     return value
+
+
+def get_int(
+    session: Session,
+    *,
+    key: str,
+    default: int = 0,
+) -> int:
+    record = _get_record(session, key=key)
+    if record is None:
+        return default
+    try:
+        return int(str(record.value).strip())
+    except (TypeError, ValueError):
+        return default
+
+
+def set_int(
+    session: Session,
+    *,
+    key: str,
+    value: int,
+) -> int:
+    record = _get_record(session, key=key)
+    now = utcnow()
+    if record is None:
+        record = SystemSetting(
+            key=key,
+            value=str(int(value)),
+            created_at=now,
+            updated_at=now,
+        )
+    else:
+        record.value = str(int(value))
+        record.updated_at = now
+    session.add(record)
+    session.commit()
+    return int(value)
