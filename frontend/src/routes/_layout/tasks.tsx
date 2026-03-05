@@ -377,6 +377,7 @@ function TasksPage() {
     initialSettings.columnSizing,
   )
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null)
+  const [assigneeSearch, setAssigneeSearch] = useState("")
 
   const { data: projectsData } = useQuery({
     queryKey: ["projects-for-tasks"],
@@ -547,6 +548,34 @@ function TasksPage() {
       }
     })
   }, [currentUser, usersData])
+
+  const filteredAssigneeOptions = useMemo(() => {
+    const query = assigneeSearch.trim().toLowerCase()
+    const source = usersData?.data ?? []
+    if (!query) return source
+    return source.filter((user) => {
+      const fullName = (user.full_name || "").toLowerCase()
+      const email = (user.email || "").toLowerCase()
+      return fullName.includes(query) || email.includes(query)
+    })
+  }, [assigneeSearch, usersData])
+
+  const projectGroups = useMemo(() => {
+    const groups = new Map<string, Project[]>()
+    for (const project of projectsData?.data ?? []) {
+      const groupName =
+        project.block_name || project.organization_name || "Без блока"
+      const items = groups.get(groupName) ?? []
+      items.push(project)
+      groups.set(groupName, items)
+    }
+    return Array.from(groups.entries())
+      .sort((a, b) => a[0].localeCompare(b[0], "ru"))
+      .map(([groupName, items]) => [
+        groupName,
+        items.sort((a, b) => a.name.localeCompare(b.name, "ru")),
+      ] as const)
+  }, [projectsData?.data])
 
   const isSystemAdmin = Boolean(
     currentUser?.is_superuser || currentUser?.system_role === "system_admin",
@@ -1262,10 +1291,14 @@ function TasksPage() {
                 }}
               >
                 <option value="">Все проекты</option>
-                {projectsData?.data.map((project) => (
-                  <option key={project.id} value={project.id}>
-                    {project.name}
-                  </option>
+                {projectGroups.map(([groupName, items]) => (
+                  <optgroup key={groupName} label={groupName}>
+                    {items.map((project) => (
+                      <option key={project.id} value={project.id}>
+                        {project.name}
+                      </option>
+                    ))}
+                  </optgroup>
                 ))}
               </Select>
             </FormControl>
@@ -1318,6 +1351,13 @@ function TasksPage() {
 
             <FormControl>
               <FormLabel>Исполнитель</FormLabel>
+              <Input
+                size="sm"
+                placeholder="Поиск исполнителя"
+                value={assigneeSearch}
+                onChange={(e) => setAssigneeSearch(e.target.value)}
+                mb={2}
+              />
               <Select
                 value={filters.assigneeId ?? ""}
                 onChange={(e) => {
@@ -1331,7 +1371,7 @@ function TasksPage() {
                 }}
               >
                 <option value="">Все исполнители</option>
-                {usersData?.data.map((user) => (
+                {filteredAssigneeOptions.map((user) => (
                   <option key={user.id} value={user.id}>
                     {user.full_name || user.email}
                   </option>

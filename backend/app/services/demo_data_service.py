@@ -1525,7 +1525,7 @@ def populate_demo_data(session: Session, actor: User) -> DemoDataSummary:
             task = task_service.create_task(
                 session,
                 project=project,
-                creator=creator,
+                creator=actor,
                 title=str(special_task_spec["title"]),
                 description=str(special_task_spec["description"]),
                 assignee_id=assignee.id,
@@ -1562,6 +1562,7 @@ def populate_demo_data(session: Session, actor: User) -> DemoDataSummary:
             created_at = special_task_spec.get("created_at")
             if created_at is None:
                 created_at = utcnow() - timedelta(days=20)
+            task.creator_id = creator.id
             task.created_at = created_at
             task.updated_at = closed_at or created_at
             if closed_at is not None:
