@@ -450,6 +450,25 @@ def _active_project_member_ids(session: Session, *, project_id: int) -> set[int]
     }
 
 
+def _active_project_controller_ids(session: Session, *, project_id: int) -> set[int]:
+    return {
+        int(user_id)
+        for user_id in session.exec(
+            select(ProjectMember.user_id).where(
+                ProjectMember.project_id == project_id,
+                ProjectMember.is_active.is_(True),
+                ProjectMember.role.in_(
+                    [
+                        ProjectMemberRole.CONTROLLER,
+                        ProjectMemberRole.MANAGER,
+                    ]
+                ),
+            )
+        ).all()
+        if user_id is not None
+    }
+
+
 def can_complete_task(
     session: Session,
     *,
@@ -703,6 +722,21 @@ def create_task(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="Контроллер для задачи должен быть активным участником проекта",
                 )
+            allow_task_scoped_controller_assignment = system_settings_service.get_bool(
+                session,
+                key=system_settings_service.TASK_ALLOW_TASK_SCOPED_CONTROLLER_ASSIGNMENT_KEY,
+                default=False,
+            )
+            if not allow_task_scoped_controller_assignment:
+                controller_ids = _active_project_controller_ids(
+                    session,
+                    project_id=project.id,
+                )
+                if resolved_controller_id not in controller_ids:
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail="Контроллер задачи должен иметь роль контроллера в проекте",
+                    )
 
     primary_assignee_id = effective_assignee_ids[0] if effective_assignee_ids else int(creator.id)
     default_status = _get_in_progress_status(session, project.id)
@@ -836,6 +870,21 @@ def update_task(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="Контроллер для задачи должен быть активным участником проекта",
                 )
+            allow_task_scoped_controller_assignment = system_settings_service.get_bool(
+                session,
+                key=system_settings_service.TASK_ALLOW_TASK_SCOPED_CONTROLLER_ASSIGNMENT_KEY,
+                default=False,
+            )
+            if not allow_task_scoped_controller_assignment:
+                controller_ids = _active_project_controller_ids(
+                    session,
+                    project_id=task.project_id,
+                )
+                if controller_id not in controller_ids:
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail="Контроллер задачи должен иметь роль контроллера в проекте",
+                    )
 
     target_status: ProjectStatus | None = None
     if workflow_status_id is not None:

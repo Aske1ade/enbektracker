@@ -16,6 +16,7 @@ from app.api.routes import (
     projects,
     roles,
     reports,
+    task_policy,
     task_attachments,
     task_comments,
     tasks,
@@ -35,6 +36,7 @@ api_router.include_router(departments.router)
 api_router.include_router(projects.router)
 api_router.include_router(project_statuses.router)
 api_router.include_router(tasks.router)
+api_router.include_router(task_policy.router)
 api_router.include_router(task_comments.router)
 api_router.include_router(task_attachments.router)
 api_router.include_router(blocks.router)

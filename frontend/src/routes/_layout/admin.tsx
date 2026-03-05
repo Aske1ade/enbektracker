@@ -94,6 +94,7 @@ const defaultTaskPolicyDraft = {
   allow_backdated_creation: false,
   overdue_desktop_reminders_enabled: true,
   overdue_desktop_reminder_interval_minutes: 2,
+  allow_task_scoped_controller_assignment: false,
 }
 
 const ROLE_META: Record<
@@ -269,6 +270,9 @@ function AdminPage() {
       ),
       overdue_desktop_reminder_interval_minutes:
         Number(taskPolicy.overdue_desktop_reminder_interval_minutes) || 2,
+      allow_task_scoped_controller_assignment: Boolean(
+        taskPolicy.allow_task_scoped_controller_assignment,
+      ),
     })
   }, [taskPolicy])
 
@@ -382,7 +386,9 @@ function AdminPage() {
       Boolean(taskPolicy.overdue_desktop_reminders_enabled) !==
         Boolean(taskPolicyDraft.overdue_desktop_reminders_enabled) ||
       Number(taskPolicy.overdue_desktop_reminder_interval_minutes) !==
-        Number(taskPolicyDraft.overdue_desktop_reminder_interval_minutes)
+        Number(taskPolicyDraft.overdue_desktop_reminder_interval_minutes) ||
+      Boolean(taskPolicy.allow_task_scoped_controller_assignment) !==
+        Boolean(taskPolicyDraft.allow_task_scoped_controller_assignment)
     )
   }, [taskPolicy, taskPolicyDraft])
 
@@ -747,6 +753,19 @@ function AdminPage() {
             />
           </FormControl>
           <FormControl display="flex" alignItems="center" justifyContent="space-between">
+            <FormLabel m={0}>Разрешить временного контроллера задачи</FormLabel>
+            <Switch
+              isChecked={Boolean(taskPolicyDraft.allow_task_scoped_controller_assignment)}
+              isDisabled={taskPolicyLoading || taskPolicyMutation.isPending}
+              onChange={(event) =>
+                setTaskPolicyDraft((prev) => ({
+                  ...prev,
+                  allow_task_scoped_controller_assignment: event.target.checked,
+                }))
+              }
+            />
+          </FormControl>
+          <FormControl display="flex" alignItems="center" justifyContent="space-between">
             <FormLabel m={0}>Повторные desktop-напоминания о просрочке</FormLabel>
             <Switch
               isChecked={Boolean(taskPolicyDraft.overdue_desktop_reminders_enabled)}
@@ -793,6 +812,9 @@ function AdminPage() {
                 taskPolicyMutation.mutate({
                   allow_backdated_creation: Boolean(
                     taskPolicyDraft.allow_backdated_creation,
+                  ),
+                  allow_task_scoped_controller_assignment: Boolean(
+                    taskPolicyDraft.allow_task_scoped_controller_assignment,
                   ),
                   overdue_desktop_reminders_enabled: Boolean(
                     taskPolicyDraft.overdue_desktop_reminders_enabled,

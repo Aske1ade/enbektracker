@@ -461,6 +461,11 @@ export interface AdminTaskPolicy {
   allow_backdated_creation: boolean
   overdue_desktop_reminders_enabled: boolean
   overdue_desktop_reminder_interval_minutes: number
+  allow_task_scoped_controller_assignment: boolean
+}
+
+export interface TaskPolicy {
+  allow_task_scoped_controller_assignment: boolean
 }
 
 export interface AdminDesktopAgent {

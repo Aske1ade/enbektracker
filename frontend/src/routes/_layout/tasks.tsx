@@ -509,6 +509,13 @@ function TasksPage() {
     queryFn: () => trackerApi.listProjectMembers(selectedTaskProjectId),
     enabled: selectedTaskProjectId > 0,
   })
+  const { data: taskPolicy } = useQuery({
+    queryKey: ["task-policy"],
+    queryFn: () => trackerApi.getTaskPolicy(),
+  })
+  const allowTaskScopedControllerAssignment = Boolean(
+    taskPolicy?.allow_task_scoped_controller_assignment,
+  )
   const { data: createProjectMembersData } = useQuery({
     queryKey: ["task-create-project-members", form.project_id],
     queryFn: () => trackerApi.listProjectMembers(Number(form.project_id)),
@@ -1802,7 +1809,7 @@ function TasksPage() {
                             <FormControl>
                               <HStack justify="space-between" mb={1} align="center">
                                 <FormLabel mb={0}>Контроллер</FormLabel>
-                                {canManageTaskControls ? (
+                                {canManageTaskControls && allowTaskScopedControllerAssignment ? (
                                   <Popover placement="bottom-end">
                                     <PopoverTrigger>
                                       <Button size="xs" variant="outline">

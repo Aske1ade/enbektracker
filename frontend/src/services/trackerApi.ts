@@ -29,6 +29,7 @@ import type {
   OrganizationTreeNode,
   ReportTaskRow,
   AdminTaskPolicy,
+  TaskPolicy,
   AdminTaskBulkDeleteResult,
   AdminTaskBulkSetControllerResult,
   AdminDesktopAgent,
@@ -258,6 +259,11 @@ export const trackerApi = {
 
   async getAdminTaskPolicy(): Promise<AdminTaskPolicy> {
     const { data } = await api.get<AdminTaskPolicy>("/admin/task-policy")
+    return data
+  },
+
+  async getTaskPolicy(): Promise<TaskPolicy> {
+    const { data } = await api.get<TaskPolicy>("/task-policy")
     return data
   },
 

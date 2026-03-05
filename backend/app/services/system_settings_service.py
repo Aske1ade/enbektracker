@@ -9,6 +9,9 @@ TASK_OVERDUE_DESKTOP_REMINDERS_ENABLED_KEY = "tasks.overdue_desktop_reminders_en
 TASK_OVERDUE_DESKTOP_REMINDER_INTERVAL_MINUTES_KEY = (
     "tasks.overdue_desktop_reminder_interval_minutes"
 )
+TASK_ALLOW_TASK_SCOPED_CONTROLLER_ASSIGNMENT_KEY = (
+    "tasks.allow_task_scoped_controller_assignment"
+)
 TASK_OVERDUE_DESKTOP_REMINDER_INTERVAL_MIN = 2
 TASK_OVERDUE_DESKTOP_REMINDER_INTERVAL_MAX = 120
 DEMO_DATA_LOCKED_KEY = "demo_data.locked"

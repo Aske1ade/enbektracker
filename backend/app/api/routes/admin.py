@@ -804,6 +804,11 @@ def get_task_policy(
         key=system_settings_service.TASK_OVERDUE_DESKTOP_REMINDER_INTERVAL_MINUTES_KEY,
         default=system_settings_service.TASK_OVERDUE_DESKTOP_REMINDER_INTERVAL_MIN,
     )
+    allow_task_scoped_controller_assignment = system_settings_service.get_bool(
+        session,
+        key=system_settings_service.TASK_ALLOW_TASK_SCOPED_CONTROLLER_ASSIGNMENT_KEY,
+        default=False,
+    )
     overdue_desktop_reminder_interval_minutes = max(
         system_settings_service.TASK_OVERDUE_DESKTOP_REMINDER_INTERVAL_MIN,
         min(
@@ -815,6 +820,7 @@ def get_task_policy(
         allow_backdated_creation=allow_backdated_creation,
         overdue_desktop_reminders_enabled=overdue_desktop_reminders_enabled,
         overdue_desktop_reminder_interval_minutes=overdue_desktop_reminder_interval_minutes,
+        allow_task_scoped_controller_assignment=allow_task_scoped_controller_assignment,
     )
 
 
@@ -854,10 +860,16 @@ def update_task_policy(
         key=system_settings_service.TASK_OVERDUE_DESKTOP_REMINDER_INTERVAL_MINUTES_KEY,
         value=payload.overdue_desktop_reminder_interval_minutes,
     )
+    allow_task_scoped_controller_assignment = system_settings_service.set_bool(
+        session,
+        key=system_settings_service.TASK_ALLOW_TASK_SCOPED_CONTROLLER_ASSIGNMENT_KEY,
+        value=payload.allow_task_scoped_controller_assignment,
+    )
     return AdminTaskPolicyPublic(
         allow_backdated_creation=allow_backdated_creation,
         overdue_desktop_reminders_enabled=overdue_desktop_reminders_enabled,
         overdue_desktop_reminder_interval_minutes=overdue_desktop_reminder_interval_minutes,
+        allow_task_scoped_controller_assignment=allow_task_scoped_controller_assignment,
     )
 
 

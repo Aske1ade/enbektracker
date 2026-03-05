@@ -38,6 +38,10 @@ class TaskCloseRequest(SQLModel):
     attachment_ids: list[int] = Field(default_factory=list)
 
 
+class TaskPolicyPublic(SQLModel):
+    allow_task_scoped_controller_assignment: bool = False
+
+
 class TaskPublic(TaskBase):
     id: int
     creator_id: int
