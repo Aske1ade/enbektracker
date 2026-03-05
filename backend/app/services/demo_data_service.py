@@ -1564,9 +1564,10 @@ def populate_demo_data(session: Session, actor: User) -> DemoDataSummary:
                 created_at = utcnow() - timedelta(days=20)
             task.creator_id = creator.id
             task.created_at = created_at
-            task.updated_at = closed_at or created_at
             if closed_at is not None:
                 task.closed_at = closed_at
+            task.updated_at = closed_at or created_at
+            task_service.refresh_task_computed_fields(task, project)
             session.add(task)
 
         session.commit()

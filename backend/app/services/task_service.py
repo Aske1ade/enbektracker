@@ -57,6 +57,18 @@ def compute_deadline_flags(
 
 
 def refresh_task_computed_fields(task: Task, project: Project) -> None:
+    if task.closed_at:
+        closed_overdue = task.closed_at > task.due_date
+        if closed_overdue:
+            task.computed_deadline_state = TaskDeadlineState.RED
+            task.computed_urgency_state = TaskUrgencyState.OVERDUE
+            task.is_overdue = True
+        else:
+            task.computed_deadline_state = TaskDeadlineState.GREEN
+            task.computed_urgency_state = TaskUrgencyState.RESERVE
+            task.is_overdue = False
+        return
+
     deadline_state, urgency_state, is_overdue = compute_deadline_flags(
         task.due_date,
         normal_days=project.deadline_normal_days,

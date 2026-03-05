@@ -1924,68 +1924,53 @@ function TasksPage() {
                       <Text fontSize="sm" fontWeight="700" mb={2}>
                         Данные задачи
                       </Text>
-                      <VStack align="stretch" spacing={1.5}>
-                        <HStack align="start" justify="space-between" gap={2}>
-                          <Text fontSize="xs" fontWeight="700" color="ui.muted">
-                            Состояние:
-                          </Text>
-                          <Text fontSize="sm" textAlign="right">
-                            {selectedTask.status_name || selectedTask.workflow_status_name || "-"}
-                          </Text>
-                        </HStack>
-                        <HStack align="start" justify="space-between" gap={2}>
-                          <Text fontSize="xs" fontWeight="700" color="ui.muted">
-                            Исполнители:
-                          </Text>
-                          <Text fontSize="sm" textAlign="right">
-                            {selectedTask.assignee_names?.length
-                              ? selectedTask.assignee_names.join(", ")
-                              : selectedTask.assignee_name || "-"}
-                          </Text>
-                        </HStack>
-                        <HStack align="start" justify="space-between" gap={2}>
-                          <Text fontSize="xs" fontWeight="700" color="ui.muted">
-                            Контроллер:
-                          </Text>
-                          <Text fontSize="sm" textAlign="right">
-                            {selectedTask.controller_name || "-"}
-                          </Text>
-                        </HStack>
-                        <HStack align="start" justify="space-between" gap={2}>
-                          <Text fontSize="xs" fontWeight="700" color="ui.muted">
-                            Департамент:
-                          </Text>
-                          <Text fontSize="sm" textAlign="right">
-                            {selectedTask.department_name || "-"}
-                          </Text>
-                        </HStack>
-                        <HStack align="start" justify="space-between" gap={2}>
-                          <Text fontSize="xs" fontWeight="700" color="ui.muted">
-                            Срок:
-                          </Text>
-                          <Text fontSize="sm" textAlign="right">
-                            {formatDate(selectedTask.due_date)}
-                          </Text>
-                        </HStack>
-                        <HStack align="start" justify="space-between" gap={2}>
-                          <Text fontSize="xs" fontWeight="700" color="ui.muted">
-                            Последняя активность:
-                          </Text>
-                          <Text fontSize="sm" textAlign="right">
-                            {selectedTask.last_activity_at
-                              ? formatDate(selectedTask.last_activity_at)
-                              : "-"}
-                          </Text>
-                        </HStack>
-                        <HStack align="start" justify="space-between" gap={2}>
-                          <Text fontSize="xs" fontWeight="700" color="ui.muted">
-                            Кто обновил:
-                          </Text>
-                          <Text fontSize="sm" textAlign="right">
-                            {selectedTask.last_activity_by || "-"}
-                          </Text>
-                        </HStack>
-                      </VStack>
+                      <Grid templateColumns="120px 1fr" columnGap={3} rowGap={2}>
+                        <Text fontSize="xs" fontWeight="700" color="ui.muted">
+                          Состояние:
+                        </Text>
+                        <Badge
+                          colorScheme={statusBadgeColor(
+                            selectedTask.status_name || selectedTask.workflow_status_name,
+                          )}
+                          variant="subtle"
+                          fontSize="xs"
+                          px={2}
+                          py={0.5}
+                          justifySelf="start"
+                        >
+                          {selectedTask.status_name || selectedTask.workflow_status_name || "-"}
+                        </Badge>
+                        <Text fontSize="xs" fontWeight="700" color="ui.muted">
+                          Исполнители:
+                        </Text>
+                        <Text fontSize="sm">
+                          {selectedTask.assignee_names?.length
+                            ? selectedTask.assignee_names.join(", ")
+                            : selectedTask.assignee_name || "-"}
+                        </Text>
+                        <Text fontSize="xs" fontWeight="700" color="ui.muted">
+                          Контроллер:
+                        </Text>
+                        <Text fontSize="sm">{selectedTask.controller_name || "-"}</Text>
+                        <Text fontSize="xs" fontWeight="700" color="ui.muted">
+                          Департамент:
+                        </Text>
+                        <Text fontSize="sm">{selectedTask.department_name || "-"}</Text>
+                        <Text fontSize="xs" fontWeight="700" color="ui.muted">
+                          Срок:
+                        </Text>
+                        <Text fontSize="sm">{formatDate(selectedTask.due_date)}</Text>
+                        <Text fontSize="xs" fontWeight="700" color="ui.muted">
+                          Последняя активность:
+                        </Text>
+                        <Text fontSize="sm">
+                          {selectedTask.last_activity_at ? formatDate(selectedTask.last_activity_at) : "-"}
+                        </Text>
+                        <Text fontSize="xs" fontWeight="700" color="ui.muted">
+                          Кто обновил:
+                        </Text>
+                        <Text fontSize="sm">{selectedTask.last_activity_by || "-"}</Text>
+                      </Grid>
                     </Box>
                   </Grid>
                 </Box>
@@ -2393,7 +2378,7 @@ function formatDate(value: string): string {
   if (!value) return "-"
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return "-"
-  return date.toLocaleDateString()
+  return date.toLocaleDateString("ru-RU")
 }
 
 function toDateTimeLocalValue(value: string): string {
@@ -2427,6 +2412,14 @@ function deadlineBadgeColor(state: "green" | "yellow" | "red") {
   if (state === "red") return "red"
   if (state === "yellow") return "yellow"
   return "green"
+}
+
+function statusBadgeColor(status?: string | null) {
+  const value = (status || "").toLowerCase()
+  if (value.includes("готов")) return "green"
+  if (value.includes("провер")) return "orange"
+  if (value.includes("работ")) return "blue"
+  return "gray"
 }
 
 function deadlineBadgeLabel(state: "green" | "yellow" | "red") {
