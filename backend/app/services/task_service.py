@@ -327,6 +327,19 @@ def _validate_assignee_scope(
     if rbac_service.is_system_admin(actor):
         return
 
+    if rbac_service.is_lowest_hierarchy_user(
+        session,
+        user=actor,
+        project_ids={project_id},
+    ):
+        forbidden_ids = sorted(set(assignee_ids) - {int(actor.id)})
+        if forbidden_ids:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Можно назначать задачи только на себя",
+            )
+        return
+
     if allow_project_scope:
         allowed_project_member_ids = {
             int(user_id)
@@ -346,7 +359,11 @@ def _validate_assignee_scope(
             )
         return
 
-    allowed_ids = rbac_service.get_same_group_user_ids(session, user=actor)
+    managed_user_ids = rbac_service.get_managed_scope_user_ids(session, user=actor)
+    if managed_user_ids:
+        allowed_ids = managed_user_ids
+    else:
+        allowed_ids = rbac_service.get_same_group_user_ids(session, user=actor)
     if actor.id is not None:
         allowed_ids.add(int(actor.id))
     forbidden_ids = sorted(set(assignee_ids) - allowed_ids)
@@ -642,7 +659,12 @@ def create_task(
             detail="Создание задач задним числом запрещено администратором",
         )
 
-    if rbac_service.is_regular_user(creator):
+    can_assign_others = rbac_service.can_assign_task_to_others(
+        session,
+        user=creator,
+        project_ids={project.id},
+    )
+    if not can_assign_others:
         effective_assignee_ids = [int(creator.id)]
         resolved_controller_id = _resolve_auto_controller_id(
             session,

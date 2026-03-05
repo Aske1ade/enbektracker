@@ -521,6 +521,46 @@ def _is_lowest_hierarchy_user(
     return True
 
 
+def is_lowest_hierarchy_user(
+    session: Session,
+    *,
+    user: User,
+    project_ids: set[int] | None = None,
+) -> bool:
+    return _is_lowest_hierarchy_user(session, user=user, project_ids=project_ids)
+
+
+def can_assign_task_to_others(
+    session: Session,
+    *,
+    user: User,
+    project_ids: set[int] | None = None,
+) -> bool:
+    return not _is_lowest_hierarchy_user(session, user=user, project_ids=project_ids)
+
+
+def get_managed_scope_user_ids(session: Session, *, user: User) -> set[int]:
+    managed_group_ids = _get_direct_managed_group_ids(session, user=user)
+    managed_org_ids = _get_managed_organization_ids(session, user=user)
+    group_ids = set(managed_group_ids)
+    if managed_org_ids:
+        org_group_ids = {
+            int(group_id)
+            for group_id in session.exec(
+                select(OrgGroup.id).where(OrgGroup.organization_id.in_(sorted(managed_org_ids)))
+            ).all()
+            if group_id is not None
+        }
+        if org_group_ids:
+            group_ids |= _expand_group_descendants(session, org_group_ids)
+    if not group_ids:
+        return set()
+    user_ids = _get_user_ids_for_groups(session, group_ids=group_ids)
+    if user.id is not None:
+        user_ids.add(int(user.id))
+    return user_ids
+
+
 def get_dashboard_viewer_user_ids(
     session: Session,
     *,
