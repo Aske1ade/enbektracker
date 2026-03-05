@@ -1623,11 +1623,11 @@ function TasksPage() {
         isOpen={taskDrawer.isOpen}
         placement="right"
         onClose={closeTaskDrawer}
-        size="lg"
+        size="xl"
       >
         <DrawerOverlay />
           <DrawerContent
-            maxW={{ base: "100vw", xl: "860px" }}
+            maxW={{ base: "100vw", xl: "980px" }}
             bg={drawerBg}
             color={drawerTextColor}
           >
@@ -1948,7 +1948,7 @@ function TasksPage() {
                         <Text fontSize="xs" fontWeight="700" color="ui.muted">
                           Исполнители:
                         </Text>
-                        <Text fontSize="sm" minW={0} wordBreak="break-word" overflowWrap="anywhere">
+                        <Text fontSize="sm" minW={0} wordBreak="break-word">
                           {selectedTask.assignee_names?.length
                             ? selectedTask.assignee_names.join(", ")
                             : selectedTask.assignee_name || "-"}
@@ -1956,31 +1956,31 @@ function TasksPage() {
                         <Text fontSize="xs" fontWeight="700" color="ui.muted">
                           Контроллер:
                         </Text>
-                        <Text fontSize="sm" minW={0} wordBreak="break-word" overflowWrap="anywhere">
+                        <Text fontSize="sm" minW={0} wordBreak="break-word">
                           {selectedTask.controller_name || "-"}
                         </Text>
                         <Text fontSize="xs" fontWeight="700" color="ui.muted">
                           Департамент:
                         </Text>
-                        <Text fontSize="sm" minW={0} wordBreak="break-word" overflowWrap="anywhere">
+                        <Text fontSize="sm" minW={0} wordBreak="break-word">
                           {selectedTask.department_name || "-"}
                         </Text>
                         <Text fontSize="xs" fontWeight="700" color="ui.muted">
                           Срок:
                         </Text>
-                        <Text fontSize="sm" minW={0} wordBreak="break-word" overflowWrap="anywhere">
+                        <Text fontSize="sm" minW={0} wordBreak="break-word">
                           {formatDate(selectedTask.due_date)}
                         </Text>
                         <Text fontSize="xs" fontWeight="700" color="ui.muted">
                           Последняя активность:
                         </Text>
-                        <Text fontSize="sm" minW={0} wordBreak="break-word" overflowWrap="anywhere">
+                        <Text fontSize="sm" minW={0} wordBreak="break-word">
                           {selectedTask.last_activity_at ? formatDate(selectedTask.last_activity_at) : "-"}
                         </Text>
                         <Text fontSize="xs" fontWeight="700" color="ui.muted">
                           Кто обновил:
                         </Text>
-                        <Text fontSize="sm" minW={0} wordBreak="break-word" overflowWrap="anywhere">
+                        <Text fontSize="sm" minW={0} wordBreak="break-word">
                           {selectedTask.last_activity_by || "-"}
                         </Text>
                       </Grid>
