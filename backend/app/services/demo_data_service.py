@@ -419,7 +419,7 @@ DEMO_USERS = [
         "full_name": "Бауыржан Алчимбаев",
         "email": "b.alchimbayev@enbek.kz",
         "primary_department": "DEP_INFOSEC",
-        "department_keys": ["DEP_INFOSEC", "DEP_AI_OFFICE", "DEP_MIGRATION"],
+        "department_keys": ["DEP_INFOSEC", "DEP_AI_OFFICE"],
     },
     {
         "key": "dias_akhmetov",
