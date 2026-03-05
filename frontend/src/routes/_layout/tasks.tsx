@@ -1627,7 +1627,7 @@ function TasksPage() {
       >
         <DrawerOverlay />
           <DrawerContent
-            maxW={{ base: "100vw", xl: "980px" }}
+            maxW={{ base: "100vw", xl: "1080px" }}
             bg={drawerBg}
             color={drawerTextColor}
           >
@@ -1920,15 +1920,7 @@ function TasksPage() {
                       )}
                     </Box>
 
-                    <Box
-                      borderWidth="1px"
-                      borderColor="ui.border"
-                      borderRadius="8px"
-                      p={3}
-                      minW={0}
-                      w="calc(100% + 100px)"
-                      ml="-100px"
-                    >
+                    <Box borderWidth="1px" borderColor="ui.border" borderRadius="8px" p={3} minW={0}>
                       <Text fontSize="sm" fontWeight="700" mb={2}>
                         Данные задачи
                       </Text>
